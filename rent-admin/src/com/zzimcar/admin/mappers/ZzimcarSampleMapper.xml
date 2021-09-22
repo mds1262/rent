@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ZzimcarSampleDao">
+	<select id="testQuery" parameterType="Map"  resultType="rm">
+		/* 파일명 - id 값을 반드시 입력해 주세요 */
+		SELECT  
+				id, 
+				name, 
+				country, 
+				reg_date 
+		FROM Person 
+		ORDER BY id DESC 
+		LIMIT #{offset}, #{noOfRecords} 
+	</select>
+	
+	<select id="writeGetCount" resultType="int">
+        select count(*) from Person
+	</select>
+
+	
+	<insert id="insertTest" parameterType="Map">
+		INSERT INTO Person(id, name, country, reg_date) VALUES (#{id},#{name}, 'Seoul', now())
+	</insert>
+</mapper>

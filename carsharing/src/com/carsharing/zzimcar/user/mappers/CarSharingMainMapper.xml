@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CarsharingMainMapper">
+
+	<!-- 공지사항-->
+	<select id="getMainBoardList" parameterType="Map" resultType="rm">
+	<![CDATA[	
+		SELECT  
+                scb_pid,
+				scb_title,
+				scb_content,
+				scb_type,
+				scb_s_dtime,
+				scb_e_dtime,
+				scb_status,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime,
+				mod_dtime
+		FROM 	sharing_car_board
+        WHERE 	scb_s_dtime < NOW()+0
+			AND scb_e_dtime > NOW()+0
+            AND scb_type = 01
+            AND scb_status = 01
+		ORDER BY scb_s_dtime ASC, scb_title ASC
+		]]>
+		
+	</select>
+
+	<!-- 차량조회 -->
+
+	<select id="getChooseCarList" parameterType="Map" resultType="rm">
+		<![CDATA[	
+	SELECT 
+			scm_pid,
+			maker_code,
+			model_class_code,
+			model_name,
+			model_num,
+			model_year,
+			model_color,
+			model_mileage,
+			model_smoking,
+			model_fuel_code,
+			model_etc_option,
+			img_url_list,
+			img_url_detail,
+			model_status,
+			reg_mem_pid,
+			mod_mem_pid,
+			reg_dtime,
+		mod_dtime
+	FROM sharing_car_master
+	WHERE scm_pid NOT IN 
+		(	SELECT 
+					scm_pid
+			FROM sharing_car_schedule
+			WHERE  
+					DATE_FORMAT(scs_s_dtime,'%Y-%m-%d %H:%i:%s') BETWEEN DATE_FORMAT(#{carSdate},'%Y-%m-%d %H:%i:%s') AND DATE_FORMAT('20181020153000','%Y-%m-%d %H:%i:%s')
+					  OR
+					DATE_FORMAT(scs_e_dtime,'%Y-%m-%d %H:%i:%s') BETWEEN DATE_FORMAT(#{carEdate},'%Y-%m-%d %H:%i:%s') AND DATE_FORMAT('20181020153000','%Y-%m-%d %H:%i:%s')
+	                
+	)
+]]>
+	
+	</select>
+
+</mapper>

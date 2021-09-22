@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ServiceCenterDao">
+    <select id="selectNoticeList" parameterType="Map" resultType="Map">
+        SELECT SQL_CALC_FOUND_ROWS
+               BM.bbs_pid,
+               BM.bbs_code, 
+               BM.bbs_title, 
+               BM.bbs_contents, 
+               BM.bbs_view_count, 
+               BM.bbs_is_open, 
+               BM.bbs_deleted, 
+               BM.bbs_remote_ip, 
+               BM.reg_mem_pid, 
+               BM.mod_mem_pid,
+               IFNULL(
+                    (SELECT 
+                        MM.mem_name 
+                     FROM
+                        member_master AS MM
+                     WHERE
+                        BM.reg_mem_pid = MM.mem_pid
+                    ),'알수없음')   AS reg_mem_name,
+                IFNULL(
+                    (SELECT 
+                        MM.mem_name 
+                     FROM
+                        member_master AS MM
+                     WHERE
+                        BM.mod_mem_pid = MM.mem_pid
+                    ),'알수없음')   AS mod_mem_name,
+               BM.reg_dtime, 
+               BM.mod_dtime
+         FROM board_master AS BM
+         WHERE BM.bbs_deleted = 'N'
+         <if test="bbsCode != ''">
+              AND BM.bbs_code = #{bbsCode}
+         </if>
+         <if test="(bbsCode == '' or bbsCode == null) and bbsCodeArr != null">
+              AND
+               <foreach collection="bbsCodeArr" item="code" index="index" separator="or" open="(" close=")">
+                  BM.bbs_code = #{code}
+               </foreach>
+         </if>
+         <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+             AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+         </if>
+         ORDER BY BM.bbs_pid DESC
+         <if test="offset != null and row_count != null">
+            LIMIT ${offset}, ${row_count}
+         </if>  
+    </select>
+    
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+    
+    <select id="select_by_pk" parameterType="int"  resultType="rm">
+        SELECT BM.bbs_pid,
+               BM.bbs_code, 
+               BM.bbs_title, 
+               BM.bbs_contents, 
+               BM.bbs_view_count, 
+               BM.bbs_is_open, 
+               BM.bbs_deleted, 
+               BM.bbs_remote_ip, 
+               BM.reg_mem_pid, 
+               BM.mod_mem_pid,
+               IFNULL(
+                    (SELECT 
+                        MM.mem_name 
+                     FROM
+                        member_master AS MM
+                     WHERE
+                        BM.reg_mem_pid = MM.mem_pid
+                    ),'알수없음')   AS reg_mem_name,
+                IFNULL(
+                    (SELECT 
+                        MM.mem_name 
+                     FROM
+                        member_master AS MM
+                     WHERE
+                        BM.mod_mem_pid = MM.mem_pid
+                    ),'알수없음')   AS mod_mem_name,
+               BM.reg_dtime, 
+               BM.mod_dtime
+        FROM 
+                board_master as BM
+        WHERE
+                BM.bbs_pid = #{bbs_pid}
+    </select>
+    
+    <insert id="insert_base" parameterType="Map">
+   INSERT INTO  
+                board_master
+           SET
+                reg_mem_pid                 = #{reg_mem_pid}
+                , reg_dtime                 = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , mod_mem_pid               = #{reg_mem_pid}
+                , mod_dtime                 = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , bbs_code                  = #{bbs_code}
+                , bbs_title                 = #{bbs_title}
+                , bbs_contents              = #{bbs_contents}
+                , bbs_view_count            = 0
+                , bbs_is_open               = 'Y'
+                , bbs_deleted               = 'N'
+                , bbs_remote_ip             = #{bbs_remote_ip}
+    </insert>
+    
+    
+    <update id="update_by_pk" parameterType="Map">
+        UPDATE  board_master 
+           SET  mod_mem_pid             = #{reg_mem_pid}
+                , mod_dtime             = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , bbs_code              = #{bbs_code}
+                , bbs_title             = #{bbs_title}
+                , bbs_contents          = #{bbs_contents}
+        WHERE
+                bbs_pid                 = #{bbs_pid}
+    </update>
+    
+    <update id="deleteBoardItem" parameterType="Map">
+        UPDATE  board_master 
+           SET  mod_mem_pid             = #{mod_mem_pid}
+                , mod_dtime             = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , bbs_deleted           = 'Y'
+        WHERE
+                bbs_pid                 = #{bbs_pid}
+    </update>
+</mapper>

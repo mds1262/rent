@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CouponMaster">
+
+	<select id="getCouponMasterAll" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				coupon_pid,
+				coupon_type,
+				coupon_name,
+				coupon_memo,
+				is_duplication,
+				create_total_count,
+				date_format(promotion_sdtime, '%Y-%m-%d %H:%i:%s')as promotion_sdtime,
+                date_format(promotion_edtime, '%Y-%m-%d %H:%i:%s')as promotion_edtime,
+				date_format(use_sdtime, '%Y-%m-%d %H:%i:%s')as use_sdtime,
+                date_format(use_edtime, '%Y-%m-%d %H:%i:%s')as use_edtime,
+				rccorp_pids,
+				price_min_limit,
+				discount_type,
+				discount_price,
+				reg_mem_pid,
+				coupon_status,
+				str_to_date(reg_dtime, '%Y%m%d')as reg_dtime,
+				str_to_date(mod_dtime, '%Y%m%d')as mod_dtime
+		FROM coupon_master 
+		WHERE 1=1
+		AND coupon_status != '9' 
+			<if test="couponName != '' and couponName != null ">
+				AND coupon_name LIKE concat('%',#{couponName},'%')
+			</if>
+			<if test="isDuplication != null and isDuplication != '' ">
+				AND is_duplication = #{isDuplication}
+			</if>
+			<if test="useSdtime != '' and useSdtime != null and useEdtime != '' and useEdtime != null ">
+				AND
+				(
+				use_sdtime between CONCAT(REPLACE('${useSdtime}', '-', ''), '000000') and CONCAT(REPLACE('${useEdtime}', '-', ''), '235959')
+				OR 
+				use_edtime between CONCAT(REPLACE('${useSdtime}', '-', ''), '000000') and CONCAT(REPLACE('${useEdtime}', '-', ''), '235959')
+				)
+			</if>
+			<if test="couponType != '' and couponType != null ">
+				AND coupon_type = #{couponType}
+			</if>												
+		ORDER BY coupon_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+		<if test="offset == null or row_count == null">
+			LIMIT 1, 10
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+	
+	<select id="getCouponMasterView" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				coupon_pid,
+				rccorp_pid,
+				is_direct,
+				coupon_type,
+				coupon_name,
+				coupon_memo,
+				is_duplication,
+				create_total_count,
+				date_format(promotion_sdtime, '%Y-%m-%d %H:%i:%s') as promotion_sdtime,
+                date_format(promotion_edtime, '%Y-%m-%d %H:%i:%s') as promotion_edtime,
+				date_format(use_sdtime, '%Y-%m-%d %H:%i:%s') as use_sdtime,
+                date_format(use_edtime, '%Y-%m-%d %H:%i:%s') as use_edtime,
+				rccorp_pids,
+				price_min_limit,
+				discount_type,
+				discount_price,
+				reg_mem_pid,
+				coupon_status,
+				str_to_date(reg_dtime, '%Y%m%d')as reg_dtime,
+				str_to_date(mod_dtime, '%Y%m%d')as mod_dtime
+		FROM coupon_master 
+			WHERE 1=1
+			AND coupon_pid = #{couponPid}
+
+	</select>
+	
+	<insert id="insertCouponMaster" parameterType="Map">
+		INSERT INTO coupon_master
+				SET	coupon_type = #{couponType },
+					coupon_name = #{couponName },
+					coupon_memo = #{couponMemo },
+					<if test="rentcarCorpList!=null">
+			           rccorp_pid = #{rentcarCorpList},
+			           is_direct = 'Y',
+			        </if>
+					is_duplication = #{isDuplication },
+					create_total_count = #{createTotalCount },
+					promotion_sdtime = DATE_FORMAT(#{promotionSdtime }, '%Y%m%d%H%i%s'),
+					promotion_edtime = DATE_FORMAT(#{promotionEdtime }, '%Y%m%d%H%i%s'),
+					use_sdtime = DATE_FORMAT(#{useSdtime}, '%Y%m%d%H%i%s'),
+					use_edtime = DATE_FORMAT(#{useEdtime}, '%Y%m%d%H%i%s'),
+					rccorp_pids = #{rccorpPids },
+					price_min_limit = #{priceMinLimit },
+					discount_type = #{discountType },
+					discount_price = #{discountPrice },
+					reg_mem_pid = #{regMemPid },
+					coupon_status = #{couponStatus },
+					reg_dtime = now() + 0,
+					mod_dtime = now() + 0
+		
+		<selectKey resultType="int" keyProperty="couponPid" order="AFTER">
+        	SELECT LAST_INSERT_ID()
+		</selectKey> 		
+	
+	</insert>
+		<insert id="insertcouponPin" parameterType="Map">
+				INSERT INTO coupon_pin
+							(
+							coupon_pid,
+							coupon_number,
+							pin_status,
+							reg_mem_pid,
+							reg_dtime,
+							mod_dtime
+							)
+							VALUES
+							(
+							#{couponPid },
+							#{couponNumber },
+							'0',
+							#{regMemPid },
+							now() + 0,
+							now() + 0
+							)
+</insert>
+
+	<select id="getCouponKeyCheck" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				cpin_pid,
+				coupon_pid,
+				coupon_number,
+				pin_status,
+				reg_mem_pid,
+				str_to_date(reg_dtime, '%Y%m%d')as reg_dtime,
+				str_to_date(mod_dtime, '%Y%m%d')as mod_dtime
+		FROM coupon_pin 
+			WHERE 1=1
+			
+
+	</select>
+	
+	<update id="updateCouponMaster" parameterType="Map" >
+		
+		UPDATE coupon_master
+				SET
+				coupon_name = #{couponName },
+				coupon_memo = #{couponMemo},
+		        <choose>
+					<when test="rentcarCorpList!=null">
+						rccorp_pid = #{rentcarCorpList},
+						is_direct = 'Y',
+					</when>
+					<otherwise>
+						rccorp_pid = 0,
+						is_direct = 'N',
+					</otherwise>
+				</choose>
+				promotion_sdtime = DATE_FORMAT(#{promotionSdtime}, '%Y%m%d%H%i%s'),
+				promotion_edtime = DATE_FORMAT(#{promotionEdtime}, '%Y%m%d%H%i%s'),
+				use_sdtime = DATE_FORMAT(#{useSdtime}, '%Y%m%d%H%i%s'),
+				use_edtime = DATE_FORMAT(#{useEdtime}, '%Y%m%d%H%i%s'),
+				price_min_limit = #{priceMinLimit },
+				coupon_status = #{couponStatus },
+				reg_mem_pid = #{modMemPid },
+				mod_dtime =now() + 0
+				WHERE coupon_pid = #{couponPid}
+	</update>
+<update id="deleteCouponPin" parameterType="Map" >
+	
+	UPDATE  coupon_pin 
+		SET
+			pin_status = '9'
+		WHERE 
+		coupon_pid=#{subCouponPid}
+</update>		
+
+
+<update id="deleteCouponMaster" parameterType="Map" >
+	
+	UPDATE  coupon_master SET
+			coupon_status = '9'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				coupon_pid IN
+				<foreach collection="couponPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			coupon_pid = #{couponPid}
+			</otherwise>
+		</choose>
+</update>
+
+<select id="getCouponPin" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				concat(substring(S1.coupon_number,1,4),'-',substring(S1.coupon_number,5,4),'-',substring(S1.coupon_number,9,4),'-',substring(S1.coupon_number,13,4))as coupon_number,
+				CASE 
+					 WHEN S1.pin_status = '0' then '활성'
+					 WHEN S1.pin_status = '1' then '비활성'
+					 WHEN S1.pin_status = '9' then '삭제'
+					 ELSE '상태값 없음' 
+                 END  AS pin_status,
+				S2.coupon_name,
+                S2.promotion_sdtime,
+                S2.promotion_edtime,
+                S2.use_sdtime,
+                S2.use_edtime
+		FROM coupon_pin S1,coupon_master S2
+			WHERE 1=1
+            AND S1.coupon_pid = S2.coupon_pid
+			AND S1.coupon_pid = #{couponPid}
+			ORDER BY S1.cpin_pid desc
+			
+
+	</select>
+
+</mapper>

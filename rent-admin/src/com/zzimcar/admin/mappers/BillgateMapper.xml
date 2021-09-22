@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.BillgateDao">
+
+	
+	<select id="select_manager_by_pk" parameterType="int"  resultType="rm">
+		/* BillgateMapper.xml - select_manager_by_pk */
+		SELECT 	mem_pid				,
+    			mem_id				,
+    			mem_pwd				,
+			    mem_name			,
+			    mem_birth			,
+			    mem_email			,
+			    mem_phone			,
+			    mem_isauth			,
+			    auth_num			,
+			    filter_car_type		,
+			    filter_car_option	,
+			    filter_car_eval		,
+			    device_type			,
+			    push_id				,
+			    mem_type			,
+			    mem_level			,
+			    last_login_dtime	,
+			    mem_status			,
+			    reg_dtime			,
+			    mod_dtime
+		 FROM 	member_master
+		 WHERE	mem_pid = #{mem_pid}
+	</select>
+
+	<!-- 예약주문 PG통신 이력 저장 -->
+	<insert id="insert_rentcar_order_log" parameterType="Map">
+		/* BillgateMapper.xml - insert_rentcar_order_log */
+		INSERT INTO rentcar_order_log (	
+			rcorder_pid, request_type, request_data, request_dtime, result_data, result_dtime, reg_dtime, mod_dtime 
+		) VALUES (
+			#{rcorder_pid }, #{request_type }, #{request_data }, #{request_dtime }, #{result_data }, #{result_dtime }, 
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+		)
+
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="orderlog_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<!-- 주문정보 조회 -->
+	<select id="select_order_pk" parameterType="Map" resultType="rm">
+		SELECT	ST.*, 
+				MM.mem_id, MM.mem_name,
+				RMM.model_code, RMM.model_name,
+				NM.model_name AS nm_model_name, NM.model_code AS nm_model_code,
+				RC.erp_client_name, RC.erp_client_id, RC.erp_client_pwd,
+				PC.corp_name, 
+				IFNULL(EM.erp_name, "") AS erp_name 
+		  FROM	rentcar_order_master ST  
+		  			LEFT JOIN erp_master EM ON ST.erp_pid = EM.erp_pid,
+		  		member_master MM, 
+		  		rentcar_model_master RMM, 
+		  		rentcar_corp RC,
+		  		provider_corp PC,
+				nmcar_model NM
+		 WHERE	ST.rcorder_pid = #{rcorder_pid}
+		   AND	ST.mem_pid = MM.mem_pid
+		   AND	ST.rcmodel_pid = RMM.rcmodel_pid
+		   AND	ST.rccorp_pid = RC.rccorp_pid
+		   AND	ST.provider_pid = PC.provider_pid
+		   AND	RMM.nmmodel_pid = NM.nmmodel_pid
+	</select>
+	
+	<update id="update_schedule_by_order_pid" parameterType="Map">
+		UPDATE	rentcar_schedule
+		   SET	schedule_status		= #{scheduleStatus},
+				mod_mem_pid			= #{modMemPid},
+				mod_dtime			= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	mem_pid = #{memPid}		
+		   AND	rcorder_pid  = #{rcorderPid}
+	</update>
+	
+	<!-- 신용카드 결제승인취소 내역 저장 -->
+	<update id="update_order_cancel_by_pk" parameterType="Map">
+		UPDATE	rentcar_order_master
+		SET		order_status			= #{orderStatus},
+				order_cancel_step		= #{orderCancelStep},
+				order_cancel_reqdtime	= #{orderCancelReqdtime},
+				order_cancel_resdtime	= #{orderCancelResdtime},
+				order_cancel_message	= #{orderCancelMessage},
+				order_cancel_res		= #{orderCancelRes},
+				erp_cancel_res			= #{erpCancelRes},
+				mod_mem_pid				= #{modMemPid},
+				mod_dtime				= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE	rcorder_pid = #{rcorderPid}
+	</update>
+	
+	<!-- 마이 쿠폰 상태 수정 -->	
+	<update id="update_member_cooupon" parameterType="Map">
+		UPDATE	member_coupon
+		   SET	coupon_status	= #{couponStatus  },
+		   		mod_dtime		= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	mem_pid = #{memPid }
+		   AND	memcoupon_pid = #{memcouponPid }
+	</update>
+	
+	<!-- 마이 포인트/쿠폰 주문마스터에서 삭제(복원), 
+		price_dc_point, mem_coupon_pid, price_dc_coupon는 0으로 변경
+		price_dc_final 은 변경하지 않는다.(포인트 쿠폰은 사용했었다는 내역을 남기기위함)  
+	-->	
+	<update id="update_order_coupon_point_by_pk" parameterType="Map">
+		UPDATE	rentcar_order_master
+		   SET	price_dc_point = 0,
+		   		mem_coupon_pid = 0,
+		   		price_dc_coupon = 0,
+		   		mod_dtime		= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	rcorder_pid = #{rcorderPid }
+	</update>
+</mapper>

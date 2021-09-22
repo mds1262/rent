@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.RentcarAuthorityDao">
+
+	<select id="select_page" parameterType="Map" resultType="rm">
+			SELECT SQL_CALC_FOUND_ROWS
+					mem_pid,
+					mem_id,
+					mem_pwd,
+					mem_name,
+					mem_birth,
+					mem_email,
+					mem_phone,
+					mem_isauth,
+					auth_num,
+					filter_car_type,
+					filter_car_option,
+					filter_car_eval,
+					filter_car_mk,
+					filter_car_fuel,
+					filter_car_year,
+					filter_car_insu,
+					device_type,
+					mem_point,
+					push_id,
+					provider_pid,
+					mem_type,
+					mem_level,
+					last_login_dtime,
+					date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+					date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+			FROM member_master	
+			WHERE 1=1
+			AND mem_isauth ='Y'
+			AND mem_status = '1'
+			AND mem_type = 10
+		<if test="search_value!=null">
+			AND mem_id like '%${search_value}%'
+		</if>
+		ORDER BY mem_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+	
+	<select id="select_corp" parameterType="Map" resultType="rm">
+	     SELECT SQL_CALC_FOUND_ROWS
+			    PC.provider_pid,
+			    PC.corp_name,
+			    RC.area_code
+			    <if test="area_sort !=null">
+			    , (SELECT 
+			         code_pid 
+			       FROM 
+			         common_code 
+			       WHERE 
+			         code_div='ZZIMCAR_AREA' 
+			         AND code_key = RC.area_code 
+			         AND code_status = 1 
+			         <if test="area_sort == 'ASC' or area_sort == 'DESC'">
+			             ORDER BY code_pid ${area_sort} 
+			         </if>
+			       LIMIT 1) AS code_pid
+			    </if>
+		   FROM provider_corp AS PC, rentcar_corp AS RC
+		        
+		  WHERE PC.provider_pid = RC.provider_pid
+		        AND PC.corp_status != '99'
+		        AND RC.corp_status != '99'
+		        
+	   ORDER BY <if test="area_sort !=null and (area_sort == 'ASC' or area_sort == 'DESC')">code_pid ${area_sort}, </if>
+	            PC.corp_name ASC
+	</select>
+ 
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS total_count
+	</select>
+	
+		
+	<update id="update_member_corp" parameterType="Map" >
+	
+	UPDATE member_master SET 
+			<if test="provider_pid != 0">
+			provider_pid = #{provider_pid}
+			</if>
+			<if test="provider_pid == 0">
+			provider_pid = null
+			</if>
+	 WHERE mem_pid = #{mem_pid}
+	</update>
+	
+</mapper>

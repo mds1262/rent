@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.carsharing.zzimcar.admin.dao.ClientCompanyDao">
+	<!-- ## 필수 생성 Query ########################################### -->
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	client_corp 
+		   SET	cc_name			= #{cc_name}			,
+				cc_licensee_num	= #{cc_licensee_num}	,
+				cc_ceo_name		= #{cc_ceo_name}		,
+				cc_address		= #{cc_address}			,
+				cc_address_sub	= #{cc_address_sub}		,
+				cc_post_num		= #{cc_post_num}		,
+				cc_tel			= #{cc_tel}				,
+				cc_fax			= #{cc_fax}				,
+				cc_mfic			= #{cc_mfic}			,
+				cc_mfic_call_num= #{cc_mfic_call_num}	,
+				cc_status		= #{cc_status}			,
+				mod_mem_pid		= #{mod_mem_pid}		,
+				mod_dtime		= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	cc_pid = #{cc_pid}		
+	</update>
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	*
+		  FROM 	client_corp 
+		 WHERE	cc_pid = #{cc_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+	
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		SELECT	SQL_CALC_FOUND_ROWS
+				cc_pid,
+			    cc_name,
+			    cc_licensee_num,
+			    cc_ceo_name,
+			    cc_address,
+			    cc_address_sub,
+			    cc_post_num,
+			    cc_tel,
+			    cc_fax,
+			    cc_mfic,
+			    cc_mfic_call_num,
+			    cc_status,
+			    reg_mem_pid,
+			    mod_mem_pid,
+			    reg_dtime,
+			    mod_dtime
+		  FROM 	client_corp
+		 WHERE	cc_status != '99'
+	  ORDER BY	cc_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+	<insert id="insert_code" parameterType="Map">
+		INSERT INTO client_corp 
+		(
+			cc_name		, cc_licensee_num	, cc_ceo_name	, cc_address	, cc_address_sub	,
+			cc_post_num	, cc_tel			, cc_fax		, cc_mfic		, cc_mfic_call_num	, cc_status	,
+			reg_mem_pid	, mod_mem_pid		, 
+			reg_dtime	, mod_dtime
+		) VALUES ( 
+			#{cc_name}		, #{cc_licensee_num}	, #{cc_ceo_name}	, #{cc_address}	, #{cc_address_sub}		,
+			#{cc_post_num}	, #{cc_tel}				, #{cc_fax}			, #{cc_mfic}	, #{cc_mfic_call_num}	, #{cc_status} ,
+			#{reg_mem_pid}	, #{mod_mem_pid} ,
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+		)
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="code_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_delete" parameterType="Map">
+		UPDATE	client_corp 
+		   SET	cc_status	= '99'				,
+				mod_mem_pid	= #{mod_mem_pid}	,
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	cc_pid = #{cc_pid}		
+	</update>
+</mapper>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SNCORDER">
+	<select id="sncOrderList" parameterType="Map"  resultType="rm">
+		SELECT
+				SQL_CALC_FOUND_ROWS
+				ST.snc_order_pid,
+				ST.rccorp_pid,
+				DATE_FORMAT(ST.snc_order_date,'%Y.%m.%d') as snc_order_date,
+                (SELECT 
+					   ST1.corp_public_name 
+				FROM
+				(
+					SELECT S1.corp_public_name,S2.rccorp_pid FROM provider_corp S1, rentcar_corp S2
+						WHERE S1.provider_pid=S2.provider_pid
+						AND S2.corp_status = 10 )
+                        ST1 WHERE ST.rccorp_pid = ST1.rccorp_pid)AS corp_public_name,
+                (SELECT maker_name FROM car_maker CM WHERE ST.maker_pid = CM.maker_pid)AS meker_name,
+                (SELECT snc_car_name FROM snc_car_model SCM WHERE ST.snc_car_pid = SCM.snc_car_pid)AS snc_car_name,
+                ST.snc_order_trim_name,
+				replace(S1.snc_option_color_name,',','/')AS snc_option_color_name,
+				S2.snc_option_name,
+                ST.snc_order_count,
+                ST.snc_order_memo,
+                CASE ST.snc_order_step WHEN '9' THEN '완료'
+									   WHEN '1' THEN '진행중'
+                                       ELSE '요청'
+                END AS snc_order_name,
+                CASE ST.snc_order_status WHEN '00' THEN '정상'
+                                       	 ELSE '취소'
+                END AS snc_order_status_name,                
+                ST.snc_order_step,
+                ST.snc_order_status
+		FROM
+			(SELECT 
+				SOM.snc_order_pid,
+				SOM.snc_car_pid,
+				SOM.maker_pid,
+				SOM.rccorp_pid,
+				SOM.snc_order_count,
+				SOM.snc_order_final_price,
+				SOM.snc_order_memo,
+				SOM.snc_order_step,
+				SOM.snc_order_status,
+				SOM.snc_order_date,
+				SOM.reg_mem_pid,
+				SOM.mod_mem_pid,
+				SOM.reg_dtime,
+				
+				SOT.snc_order_trim_pid,
+				SOT.snc_order_trim_name,
+				SOT.snc_order_trim_price
+				FROM snc_order_master SOM
+				LEFT JOIN snc_order_trim SOT
+				ON SOM.snc_order_pid = SOT.snc_order_pid
+				)ST
+            LEFT JOIN (
+            SELECT
+				snc_order_pid,
+				snc_order_option_pid,
+				snc_order_trim_pid,
+				snc_option_code,
+				GROUP_CONCAT(snc_option_name,'') as snc_option_color_name,
+				snc_option_price
+                FROM
+				snc_order_option
+                WHERE snc_option_code = 'I' OR snc_option_code = 'E'
+				GROUP BY snc_order_pid
+				ORDER BY snc_order_pid DESC ) S1
+			ON ST.snc_order_trim_pid = S1.snc_order_trim_pid
+			AND ST.snc_order_pid = S1.snc_order_pid
+            LEFT JOIN (
+            SELECT
+				snc_order_pid,
+				snc_order_option_pid,
+				snc_order_trim_pid,
+				snc_option_code,
+				GROUP_CONCAT(snc_option_name,'')as snc_option_name,
+				snc_option_price
+                FROM
+				snc_order_option
+                WHERE snc_option_code != 'I' AND snc_option_code != 'E'
+                 GROUP BY snc_order_pid )S2
+                ON ST.snc_order_trim_pid = S2.snc_order_trim_pid
+				AND ST.snc_order_pid = S2.snc_order_pid
+				WHERE 1=1
+				<if test="rccorpPid != '' and rccorpPid != null">
+					AND ST.rccorp_pid = #{rccorpPid}
+				</if>
+				<if test="sncOrderSdate != '' and sncOrderSdate != null">
+					AND DATE_FORMAT(ST.snc_order_date,'%y-%M-%d') 
+						BETWEEN DATE_FORMAT(#{sncOrderSdate},'%y-%M-%d')  
+						AND 	DATE_FORMAT(#{sncOrderEdate},'%y-%M-%d') 
+				</if>
+				<if test="sncOrderStep != '' and sncOrderStep != null">
+					AND ST.snc_order_step = #{sncOrderStep}
+				</if>
+				ORDER BY ST.snc_order_pid DESC
+				LIMIT #{offset}, #{row_count}
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+	<update id="cancelSncOrder" parameterType="Map" >
+	
+		UPDATE  snc_order_master SET
+				snc_order_status = '10'
+			WHERE 
+			<choose>
+				<when test = "PidSize > 0" >
+					snc_order_pid IN
+					<foreach collection="sncOrderPidList" item="pidList"  open="(" close=")" separator=",">
+	           			 #{pidList}
+	       			 </foreach>
+				</when>
+				<otherwise>
+				snc_order_pid = #{sncOrderPid}
+				</otherwise>
+			</choose>
+	</update>
+	
+	<select id="getSncOptionInfo" parameterType="Map" resultType="rm">
+		
+		SELECT 
+			snc_order_option_pid,
+			snc_order_trim_pid,
+			snc_order_pid,
+			snc_option_code,
+			snc_option_name,
+			snc_option_price,
+			reg_mem_pid,
+			mod_mem_pid,
+			reg_dtime,
+			mod_dtime
+		FROM snc_order_option
+		WHERE (snc_option_code != 'I' AND  snc_option_code != 'E')
+		AND snc_order_pid = #{sncOrderPid}
+		
+	</select>
+	
+	<update id="updateSncOrderStatus" parameterType="Map">
+	
+		UPDATE snc_order_master SET
+		 snc_order_step = #{sncOrderStep}
+		 WHERE snc_order_pid = #{sncOrderPid}
+	
+	</update>
+	
+	<update id="UpdatesncOrderMemo" parameterType="Map">
+	
+		UPDATE snc_order_master SET
+		 snc_order_memo = #{sncOrderMemo}
+		 WHERE snc_order_pid = #{sncOrderMemoPid}
+	
+	</update>
+	
+	<select id="getSncOrderMemo" parameterType="Map" resultType="rm">
+		SELECT 
+			snc_order_memo
+		FROM snc_order_master
+		WHERE snc_order_pid = #{sncOrderPid}	
+	</select>
+</mapper>

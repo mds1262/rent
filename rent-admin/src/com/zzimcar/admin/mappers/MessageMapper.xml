@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.MessageDao">
+
+	<insert id="insert_npro_msg" parameterType="Map">
+		/* MessageDao.xml - insert_npro_msg */
+		INSERT INTO npro_msg_data(
+			CUR_STATE,
+			CALL_TO,
+			CALL_FROM,
+			SMS_TXT,
+			<if test="cont_seq!=null">
+		   	CONT_SEQ,
+			</if>
+			MSG_TYPE
+		)VALUES${insertMsg}
+<!-- 			0,  -->
+<!-- 			#{msg_to},  -->
+<!-- 			#{msg_from},  -->
+<!-- 			#{msg},  -->
+<!-- 			<if test="cont_seq!=null"> -->
+<!-- 		   	#{cont_seq}, -->
+<!-- 			</if> -->
+<!-- 			#{msg_type} -->
+<!-- 		) -->
+	</insert>
+	
+	<insert id="insert_npro_mms_msg" parameterType="Map">
+		/* MessageDao.xml - insert_npro_mms_msg */
+		INSERT INTO npro_mms_contents_info(
+			FILE_CNT,
+			MMS_BODY,
+			MMS_SUBJECT
+		)VALUES(
+			1, 
+			#{mms_body}, 
+			#{mms_subject}
+		)
+		<selectKey resultType="int" keyProperty="cont_seq" order="AFTER">
+        	SELECT LAST_INSERT_ID()
+		</selectKey>
+	</insert>
+</mapper>

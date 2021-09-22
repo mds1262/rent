@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="nMCarModel">
+
+    <select id="getNmCarModelAll" parameterType="Map" resultType="rm">
+        SELECT SQL_CALC_FOUND_ROWS
+                nmmodel_pid,
+                model_code,
+                model_name,
+                class_code,
+                gear_code,
+                maker_code,
+                fuel_code,
+                engine_cc,
+                carrier_code,
+                seater_count,
+                sort_number,
+                img_url_list,
+                img_url_detail,
+                min_price,
+                model_tags,
+                nmcar_status,
+                vhcle_sn,
+                reg_mem_pid,
+                mod_mem_pid,
+                str_to_date(reg_dtime, '%Y%m%d%H%i%s')as reg_dtime,
+                str_to_date(mod_dtime, '%Y%m%d%H%i%s')as mod_dtime
+        FROM nmcar_model
+        WHERE (nmcar_status = '1' OR nmcar_status = '0')
+            <if test="modelName != null and modelName != ''">
+                AND UPPER(model_name) LIKE concat('%',UPPER(#{modelName}),'%')
+            </if>
+            <if test="classCode != null and classCode != ''">
+                AND class_code = UPPER(#{classCode})
+            </if>
+            <if test="makerCode != null and makerCode != ''">
+                AND maker_code = #{makerCode}
+            </if>
+            <if test="fuelCode != null and fuelCode != ''">
+                AND fuel_code = #{fuelCode}
+            </if>
+            <if test="nmcarStatus != null and nmcarStatus != ''">
+                AND nmcar_status = #{nmcarStatus}
+            </if>                               
+        ORDER BY nmmodel_pid DESC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+        <if test="offset == null or row_count == null">
+            LIMIT 1, 10
+        </if>
+    </select>
+
+    <select id="select_found_rows" resultType="int">
+        SELECT FOUND_ROWS() AS
+        total_count
+    </select>
+
+        <select id="getCarModelView" parameterType="Map" resultType="rm">
+        SELECT SQL_CALC_FOUND_ROWS
+                nmmodel_pid,
+                model_code,
+                model_name,
+                class_code,
+                gear_code,
+                maker_code,
+                fuel_code,
+                engine_cc,
+                carrier_code,
+                seater_count,
+                sort_number,
+                img_url_list,
+                img_url_detail,
+                min_price,
+                model_tags,
+                nmcar_status,
+                vhcle_sn,
+                reg_mem_pid,
+                mod_mem_pid,
+                str_to_date(reg_dtime, '%Y%m%d%H%i%s')as reg_dtime,
+                str_to_date(mod_dtime, '%Y%m%d%H%i%s')as mod_dtime
+        FROM nmcar_model
+        WHERE nmmodel_pid = #{nmmodelPid}
+
+    </select>
+
+    <insert id="insertCarModel" parameterType="Map">
+        
+        INSERT INTO nmcar_model
+        (
+            model_code,
+            model_name,
+            class_code,
+            gear_code,
+            maker_code,
+            fuel_code,
+            engine_cc,
+            carrier_code,
+            seater_count,
+            img_url_list,
+            img_url_detail,
+            model_tags,
+            nmcar_status,
+            min_price,
+            reg_mem_pid,
+            mod_mem_pid,
+            reg_dtime,
+            mod_dtime
+        )
+        VALUES
+        (
+            #{modelCode},
+            #{modelName},
+            #{classCode},
+            #{gearCode},
+            #{makerCode},
+            #{fuelCode},
+            #{engineCc},
+            #{carrierCode},
+            #{seaterCount},
+            #{imgUrlList},
+            #{imgUrlDetail},
+            #{modelTags},
+            #{nmcarStatus},
+            #{minPrice},
+            #{regMemPid},
+            #{regMemPid},
+            now() + 0,
+            now() + 0
+        )
+
+
+    </insert>
+
+    <update id="updateCarModel" parameterType="Map" >
+        UPDATE nmcar_model
+        SET
+            model_code = #{modelCode },
+            model_name = #{modelName },
+            class_code = #{classCode },
+            gear_code =  #{gearCode },
+            maker_code = #{makerCode },
+            fuel_code = #{fuelCode },
+            engine_cc = #{engineCc },
+            carrier_code = #{carrierCode },
+            seater_count = #{seaterCount },
+            min_price = #{minPrice},
+            <if test='imgUrlList != null and imgUrlList != "" ' >
+            img_url_list = #{imgUrlList },
+            </if>
+            <if test='imgUrlDetail != null and imgUrlDetail != "" ' >
+            img_url_detail = #{imgUrlDetail},
+            </if>
+            model_tags = #{modelTags},
+            nmcar_status = #{nmcarStatus },
+            mod_mem_pid = #{modMemPid },
+            mod_dtime = now() + 0
+        WHERE nmmodel_pid = #{nmmodelPid}
+        
+    </update>
+
+<delete id="deleteNmModel" parameterType="Map" >
+    
+    UPDATE nmcar_model SET 
+        nmcar_status = '9'
+        WHERE 
+        <choose>
+            <when test = "PidSize > 0" >
+                nmmodel_pid IN
+                <foreach collection="nmPidList" item="pidList"  open="(" close=")" separator=",">
+                     #{pidList}
+                 </foreach>
+            </when>
+            <otherwise>
+            nmmodel_pid = #{nmmodelPid}
+            </otherwise>
+        </choose>
+</delete>
+ <select id="modelCodeCheck" parameterType="Map" resultType="rm">
+        SELECT SQL_CALC_FOUND_ROWS
+                nmmodel_pid,
+                model_code,
+                model_name,
+                class_code,
+                gear_code,
+                maker_code,
+                fuel_code,
+                engine_cc,
+                carrier_code,
+                seater_count,
+                sort_number,
+                img_url_list,
+                img_url_detail,
+                min_price,
+                model_tags,
+                nmcar_status,
+                vhcle_sn,
+                reg_mem_pid,
+                mod_mem_pid,
+                str_to_date(reg_dtime, '%Y%m%d%H%i%s')as reg_dtime,
+                str_to_date(mod_dtime, '%Y%m%d%H%i%s')as mod_dtime
+        FROM nmcar_model
+        WHERE model_code = #{modelCode}
+        AND nmcar_status != '9'
+    </select>
+    
+    <select id="getNmCarLists" parameterType="Map" resultType="com.zzimcar.admin.erp.vo.NmCarList">
+        SELECT  model_code AS code,
+				model_name AS name,
+		        (select code_value from common_code where code_key = class_code) AS gubun,
+		        (select code_value from common_code where code_key = gear_code) AS gear,
+		        (select code_value from common_code where code_key = maker_code) AS maker,
+		        (select code_value from common_code where code_key = fuel_code) AS fuel,
+		        engine_cc AS baegi,
+		        seater_count AS jeongwon
+        FROM nmcar_model
+        WHERE nmcar_status = 1
+    </select>
+
+     <update id="updateRentCarModelMasterCode" parameterType="Map" >				
+        UPDATE rentcar_model_master				
+        SET				
+            model_code = #{modelCode },				
+            model_name = #{modelName },				
+            class_code = #{classCode },				
+            gear_code =  #{gearCode },				
+            maker_code = #{makerCode },				
+            fuel_code = #{fuelCode },				
+            engine_cc = #{engineCc },				
+            carrier_code = #{carrierCode },				
+            seater_count = #{seaterCount },				
+            min_price = #{minPrice},				
+            model_tags = #{modelTags},				
+            model_status = #{nmcarStatus },				
+            mod_mem_pid = #{modMemPid },				
+            mod_dtime = now() + 0				
+        WHERE nmmodel_pid = #{nmmodelPid}				
+    </update>				
+    				
+    <update id="updateErpSyscCode" parameterType="Map" >				
+        UPDATE erp_sync_code				
+        SET				
+            nm_code = #{modelCode },				
+            mod_mem_pid = #{modMemPid },				
+            mod_dtime = now() + 0				
+        WHERE nmmodel_pid = #{nmmodelPid}				
+    </update>				
+
+
+</mapper>

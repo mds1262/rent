@@ -1,0 +1,1337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ProviderCompanyDao">
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		SELECT	SQL_CALC_FOUND_ROWS
+		        RPC.*
+		  FROM  (SELECT 
+			            PC.provider_pid,
+		                PC.corp_code,
+		                PC.corp_name,
+		                PC.corp_public_name,
+		                PC.ceo_name,
+		                PC.corp_type,
+		                PC.corp_address,
+		                PC.corp_tel_1,
+		                PC.corp_staff_name,
+		                PC.corp_staff_tel_1,
+		                PC.corp_status,
+		                IFNULL(RC.erp_pid, 0) AS erp_pid,
+		                RC.is_direct,
+		                RC.dir_domain
+		        FROM 
+		                provider_corp AS PC, rentcar_corp AS RC
+		        WHERE
+		                RC.provider_pid = PC.provider_pid
+		                
+		                <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                            <choose>
+                                <when test="scType eq 'PC.corp_tel'">
+                                    AND (PC.corp_tel_1 LIKE CONCAT('%',#{scValue},'%') OR PC.corp_tel_2 LIKE CONCAT('%',#{scValue},'%')) 
+                                </when>
+                                <when test="scType eq 'PC.corp_staff_tel'">
+                                    AND (PC.corp_staff_tel_1 LIKE CONCAT('%',#{scValue},'%') OR PC.corp_staff_tel_2 LIKE CONCAT('%',#{scValue},'%'))
+                                </when>
+                                <otherwise>
+                                    AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+                                </otherwise>
+                            </choose>
+                        </if>
+		                <if test="NONSELECT !=null and NONSELECT !=''">
+		                    AND PC.corp_status != #{NONSELECT}
+		                </if>
+		                <if test="corp_status_view !=null and corp_status_view !=''">
+		                    AND PC.corp_status = #{corp_status_view}
+		                </if>
+		                <if test="corp_type_view !=null and corp_type_view !='' ">
+		                    AND PC.corp_type = #{corp_type_view}
+		                </if>
+		                <if test="erplist_view !=null and erplist_view !=''">
+				              AND RC.erp_pid = #{erplist_view}
+				        </if>
+				        <if test="direct_view !=null and direct_view !=''">
+				              AND RC.is_direct = #{direct_view}
+				        </if>
+				        <if test="areacode_view !=null and areacode_view !=''">
+                              AND RC.area_code = #{areacode_view}
+                        </if>    
+		           ) as RPC
+		WHERE (1)
+			
+		ORDER BY 
+				RPC.corp_name ASC 
+		<if test="offset != null and row_count != null">
+			LIMIT ${offset}, ${row_count}
+		</if> 
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+	<select id="select_all" parameterType="Map"  resultType="rm">
+        SELECT  provider_pid,
+                corp_code,
+                corp_name,
+                corp_public_name,
+                ceo_name,
+                corp_type,
+                corp_address,
+                corp_tel_1,
+                corp_staff_name,
+                corp_staff_tel_1,
+                corp_status
+          FROM  provider_corp 
+    </select>
+	
+	<delete id="delete_by_pk" parameterType="int">
+        DELETE  FROM provider_corp 
+         WHERE  provider_pid    = #{provider_pid}      
+    </delete>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	
+		        pcorp.provider_pid,
+		        pcorp.corp_bank_num,
+		        pcorp.corp_bank_name,
+		        pcorp.corp_bank_code,
+		        pcorp.corp_bank_holder,
+		        pcorp.corp_code,
+		        pcorp.corp_name,
+		        pcorp.corp_public_name,
+		        pcorp.ceo_name,
+		        pcorp.corp_type,
+		        pcorp.corp_status,
+		        pcorp.corp_post_num,
+		        pcorp.corp_address,
+		        pcorp.corp_address_sub,
+		        pcorp.corp_licensee_num,
+		        /*pcorp.corp_online_licensee_num,*/
+		        pcorp.corp_tel_1,
+		        pcorp.corp_tel_2,
+		        pcorp.corp_fax,
+		        pcorp.corp_staff_name,
+		        pcorp.corp_staff_email,
+		        pcorp.corp_staff_tel_1,
+		        pcorp.corp_staff_tel_2,
+		        pcorp.reg_mem_pid,
+		        pcorp.mod_mem_pid,
+                pcorp.reg_dtime,
+                pcorp.mod_dtime,
+                IFNULL(
+                    (SELECT 
+                        regt.mem_name 
+                     FROM
+                        member_master AS regt
+                     WHERE
+                        pcorp.reg_mem_pid = regt.mem_pid
+                    ),'알수없음')   AS reg_mem_name,
+                IFNULL(
+                    (SELECT 
+                        modt.mem_name 
+                     FROM
+                        member_master AS modt
+                     WHERE
+                        pcorp.mod_mem_pid = modt.mem_pid
+                    ),'알수없음')   AS mod_mem_name
+		  FROM	provider_corp AS pcorp
+		 WHERE	provider_pid = #{provider_pid}
+	</select>
+	
+	<select id="select_rentcar_corp" parameterType="int"  resultType="rm">
+        SELECT  
+                rccorp_pid,
+                isbooking_nm,
+                isbooking_ars,
+                corp_ad_msg,
+                corp_logo_url,
+                shuttle_interval,
+                booking_stime,
+                booking_etime,
+                booking_today,
+                booking_today_hour,
+                pickup_method,
+                pickup_guide,
+                shuttle_place_guide,
+                shuttle_place_mapurl,
+                shuttle_time_guide,
+                corp_pub_guide,
+                insu_pub_guide,
+                booking_stime,
+                insu_full_guide,
+                corp_memo,
+                isairport_service,
+                isshuttle_service,
+                isnight_service,
+                contract_date,
+                is_direct,
+                dir_domain,
+                dir_rate_settl,
+                dir_rate_settl_extracharge,
+                dir_rate_bankruptcy_booking,
+                dir_rate_cancel_in_pg24,
+                dir_rate_cancel_out_pg24,
+                dir_rate_in_rent24,
+                dir_rate_in_rent72,
+                erp_pid,
+                erp_client_cd,
+                erp_client_name,
+                erp_client_id,
+                erp_client_pwd,
+                erp_call_code,
+                corp_status,
+                area_code,
+                reg_mem_pid,
+                mod_mem_pid,
+                reg_dtime,
+                mod_dtime,
+                (SELECT erp_name FROM erp_master where erp_master.erp_pid = rentcar_corp.erp_pid) as erp_name,
+                (SELECT corp_name FROM provider_corp WHERE provider_corp.provider_pid = rentcar_corp.provider_pid) AS corp_name
+          FROM  rentcar_corp
+         WHERE  provider_pid        = #{provider_pid}
+    </select>
+	
+	<update id="update_status_provider_corp" parameterType="Map">
+		UPDATE	provider_corp
+		   SET	corp_status 	= #{provider_status}
+		   		, mod_mem_pid	= #{mod_mem_pid}
+		   		, mod_dtime		= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	provider_pid	= #{provider_pid}	
+	</update>
+	
+	<update id="update_status_rentcar_corp" parameterType="Map">
+        UPDATE  rentcar_corp
+           SET  corp_status     = #{provider_status}
+                , mod_mem_pid   = #{mod_mem_pid}
+                , mod_dtime     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                <if test="provider_status == '99'">
+                    , dir_domain  = null
+                </if>
+         WHERE  provider_pid    = #{provider_pid}  
+    </update>
+    
+    <update id="update_status_extracharge" parameterType="Map">
+        UPDATE  rentcar_extracharge
+           SET  charge_status   = #{charge_status}
+                , mod_mem_pid   = #{mod_mem_pid}
+                , mod_dtime     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  rccharge_pid    IN (SELECT result.rccharge_pid FROM (SELECT DISTINCT temp.rccharge_pid 
+                                      FROM  rentcar_extracharge as temp
+                                     WHERE  temp.rccorp_pid = (SELECT rccorp_pid FROM rentcar_corp WHERE provider_pid = #{provider_pid})) as result)   
+    </update>
+    
+    <update id="update_status_rentcar_master" parameterType="Map">
+        UPDATE  rentcar_model_master
+           SET  model_status     = #{charge_status}
+                , mod_mem_pid   = #{mod_mem_pid}
+                , mod_dtime     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  rcmodel_pid     IN (SELECT result.rcmodel_pid FROM (SELECT DISTINCT temp.rcmodel_pid 
+                                      FROM  rentcar_model_master as temp
+                                     WHERE  temp.rccorp_pid = (SELECT rccorp_pid FROM rentcar_corp WHERE provider_pid = #{provider_pid})) as result)
+    </update>
+    
+    <select id="select_code_count" parameterType="Map"  resultType="rm">
+		SELECT	provider_pid
+		  FROM	provider_corp
+		 WHERE	corp_code = #{corp_code}	
+	</select>
+	
+	<insert id="insert_base" parameterType="Map">
+   INSERT INTO	provider_corp 
+		   SET	reg_mem_pid					= #{reg_mem_pid}
+		   		, reg_dtime					= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		   		, mod_mem_pid				= #{reg_mem_pid}
+		   		, mod_dtime					= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		   		, corp_name					= #{corp_name}
+		   		, corp_code					= #{corp_code}
+		   		, corp_bank_num				= #{corpBankNum}
+		   		, corp_bank_name			= #{corpBankName}
+		   		, corp_bank_code			= #{corpBankCode}
+		   		, corp_bank_holder			= #{corpBankHolder}
+		   		, corp_licensee_num         = #{corp_licensee_num}
+                /*, corp_online_licensee_num  = 'corp_online_licensee_num'*/
+		   		<choose>
+		   			<when test="corp_public_name !=null and corp_public_name !=''">
+						, corp_public_name	= #{corp_public_name}
+					</when>
+					<otherwise>
+						, corp_public_name	= #{corp_name}
+					</otherwise>
+		   		</choose>
+				, ceo_name					= #{ceo_name}
+				, corp_type					= #{corp_type}
+				, corp_address				= #{corp_address}
+				, corp_address_sub			= #{corp_address_sub}
+				, corp_post_num             = #{corp_post_num}
+				, map_x						= #{map_x}
+				, map_y						= #{map_y}
+				, corp_tel_1                = #{corp_tel_1}
+				, corp_tel_2                = #{corp_tel_2}
+				, corp_fax                  = #{corp_fax}
+				, corp_staff_name	        = #{corp_staff_name}
+			    , corp_staff_email		    = #{corp_staff_email}
+				, corp_staff_tel_1		    = #{corp_staff_tel_1}
+				, corp_staff_tel_2		    = #{corp_staff_tel_2}
+				<if test="corp_status !=null and corp_status !=''">
+					, corp_status			= #{corp_status}
+				</if>
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	provider_corp 
+		   SET	mod_mem_pid				= #{reg_mem_pid}
+		   		, mod_dtime				= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		   		<if test="corp_name !=null and corp_name !=''">
+		   			, corp_name			= #{corp_name}
+		   		</if>
+				<if test="corp_public_name !=null and corp_public_name !=''">
+					, corp_public_name	= #{corp_public_name}
+				</if>
+				<if test="ceo_name !=null and ceo_name !=''">
+					, ceo_name			= #{ceo_name}
+				</if>
+				
+				, corp_licensee_num         = #{corp_licensee_num}
+                /*, corp_online_licensee_num  = 'corp_online_licensee_num'*/
+		   		
+		   		<if test="corpBankNum != '' and corpBankNum !=null">
+		   			, corp_bank_num		= #{corpBankNum}
+		   		</if>
+				<if test="corpBankName != '' and corpBankName !=null">
+					, corp_bank_name	= #{corpBankName}
+				</if>
+				<if test="corpBankCode != '' and corpBankCode !=null">
+					, corp_bank_code	= #{corpBankCode}
+				</if>
+				<if test="corpBankHolder != '' and corpBankHolder !=null">
+					, corp_bank_holder	= #{corpBankHolder}
+				</if>
+								
+				<if test="corp_type !=null and corp_type !=''">
+					, corp_type			= #{corp_type}
+				</if>
+				<if test="corp_address !=null and corp_address !=''">
+					, corp_address		= #{corp_address}
+				</if>
+				<if test="corp_address_sub !=null and corp_address_sub !=''">
+					, corp_address_sub	= #{corp_address_sub}
+				</if>
+				<if test="map_x !=null and map_x !='' and map_y !=null and map_y !=''">
+					, map_x				= #{map_x}
+					, map_y				= #{map_y}
+					, corp_post_num     = #{corp_post_num}
+				</if>
+				<if test="corp_tel_1 !=null and corp_tel_1 !=''">
+					, corp_tel_1		= #{corp_tel_1}
+				</if>
+					, corp_tel_2		= #{corp_tel_2}
+					, corp_fax			= #{corp_fax}
+				<if test="corp_staff_name !=null and corp_staff_name !=''">
+					, corp_staff_name	= #{corp_staff_name}
+				</if>
+					, corp_staff_email	= #{corp_staff_email}
+				<if test="corp_staff_tel_1 !=null and corp_staff_tel_1 !=''">
+					, corp_staff_tel_1	= #{corp_staff_tel_1}
+				</if>
+					, corp_staff_tel_2	= #{corp_staff_tel_2}
+				<if test="corp_status !=null and corp_status !=''">
+					, corp_status		= #{corp_status}
+				</if>
+		 WHERE	provider_pid 			= #{providerPid}		
+	</update>
+	
+	<insert id="insert_rentcar_corp_by_pk" parameterType="Map">
+        INSERT  INTO    rentcar_corp 
+           SET  mod_mem_pid                     = #{reg_mem_pid}
+                , mod_dtime                     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , reg_mem_pid                   = #{reg_mem_pid}
+                , reg_dtime                     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , isbooking_nm                  = #{isbooking_nm}
+                , isbooking_ars                 = #{isbooking_ars}
+                , corp_ad_msg                   = #{corp_ad_msg}
+                , shuttle_interval              = #{shuttle_interval}
+                , corp_logo_url                 = #{corp_logo_url}
+                , booking_stime                 = REPLACE(#{booking_stime}, ":", "")
+                , booking_etime                 = REPLACE(#{booking_etime}, ":", "")
+                , booking_today                 = #{booking_today}
+                , booking_today_hour            = #{booking_today_hour}
+                , pickup_method                 = #{pickup_method}
+                , pickup_guide                  = #{pickup_guide}
+                , shuttle_place_guide           = #{shuttle_place_guide}
+                , shuttle_place_mapurl          = #{shuttle_place_mapurl}
+                , shuttle_time_guide            = #{shuttle_time_guide}  
+                , corp_pub_guide                = #{corp_pub_guide}
+                , insu_pub_guide                = #{insu_pub_guide}
+                , insu_full_guide               = #{insu_full_guide}
+                , corp_memo                     = #{corp_memo}
+                , isairport_service             = #{isairport_service}
+                , isshuttle_service             = #{isshuttle_service}
+                , isnight_service               = #{isnight_service}
+                , contract_date                 = #{contract_date}           
+                , corp_status                   = #{corp_status_for_rent}
+                , is_direct                     = #{is_direct}
+                , dir_domain                    = #{dir_domain}
+                , dir_rate_settl                = #{dir_rate_settl}
+                , dir_rate_settl_extracharge    = #{dir_rate_settl_extracharge}
+                , dir_rate_bankruptcy_booking   = #{dir_rate_bankruptcy_booking}
+                , dir_rate_cancel_in_pg24       = #{dir_rate_cancel_in_pg24}
+                , dir_rate_cancel_out_pg24      = #{dir_rate_cancel_out_pg24}
+                , dir_rate_in_rent24            = #{dir_rate_in_rent24}
+                , dir_rate_in_rent72            = #{dir_rate_in_rent72}
+                , erp_pid                       = #{erp_pid}
+                , erp_client_cd                 = #{erp_client_cd}
+                , erp_client_name               = #{erp_client_name}
+                , erp_client_id                 = #{erp_client_id}
+                , erp_client_pwd                = #{erp_client_pwd}
+                , erp_call_code                 = #{erp_call_code}
+                , provider_pid                  = #{providerPid}
+                , area_code                     = #{area_code}
+        <selectKey resultType="int" keyProperty="rentcar_pid" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>         
+    </insert>
+	
+	<update id="update_rentcar_corp_by_pk" parameterType="Map">
+        UPDATE  rentcar_corp 
+           SET  mod_mem_pid                     = #{reg_mem_pid}
+                , mod_dtime                     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , isbooking_nm                  = #{isbooking_nm}
+                , isbooking_ars                 = #{isbooking_ars}
+                , corp_ad_msg                   = #{corp_ad_msg}
+                , shuttle_interval              = #{shuttle_interval}
+                , corp_logo_url                 = #{corp_logo_url}
+                , booking_stime                 = REPLACE(#{booking_stime}, ":", "")
+                , booking_etime                 = REPLACE(#{booking_etime}, ":", "")
+                , booking_today                 = #{booking_today}
+                , booking_today_hour            = #{booking_today_hour}
+                , pickup_method                 = #{pickup_method}
+                , pickup_guide                  = #{pickup_guide}
+                , shuttle_place_guide           = #{shuttle_place_guide}
+                , shuttle_place_mapurl          = #{shuttle_place_mapurl}
+                , shuttle_time_guide            = #{shuttle_time_guide}  
+                , corp_pub_guide                = #{corp_pub_guide}
+                , insu_pub_guide                = #{insu_pub_guide}
+                , insu_full_guide               = #{insu_full_guide}
+                , corp_memo                     = #{corp_memo}
+                , isairport_service             = #{isairport_service}
+                , isshuttle_service             = #{isshuttle_service}
+                , isnight_service               = #{isnight_service}
+                , contract_date                 = #{contract_date}           
+                , corp_status                   = #{corp_status_for_rent}
+                , erp_pid                       = #{erp_pid}
+                , is_direct                     = #{is_direct}
+                , dir_domain                    = #{dir_domain}
+                , dir_rate_settl                = #{dir_rate_settl}
+                , dir_rate_settl_extracharge    = #{dir_rate_settl_extracharge}
+                , dir_rate_bankruptcy_booking   = #{dir_rate_bankruptcy_booking}
+                , dir_rate_cancel_in_pg24       = #{dir_rate_cancel_in_pg24}
+                , dir_rate_cancel_out_pg24      = #{dir_rate_cancel_out_pg24}
+                , dir_rate_in_rent24            = #{dir_rate_in_rent24}
+                , dir_rate_in_rent72            = #{dir_rate_in_rent72}
+                , erp_client_cd                 = #{erp_client_cd}
+                , erp_client_name               = #{erp_client_name}
+                , erp_client_id                 = #{erp_client_id}
+                , erp_client_pwd                = #{erp_client_pwd}
+                , erp_call_code                 = #{erp_call_code}
+                , area_code                     = #{area_code}
+         WHERE  provider_pid                    = #{providerPid}
+    </update>
+    
+    <select id="erp_api_list" parameterType="Map" resultType="Map">
+        SELECT  erp_pid    ,
+                erp_name   
+         FROM   erp_master
+    </select>
+    
+    <!-- // 정산 List -->
+	<select id="selectSettlementList" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+		    T1.*
+		FROM
+		    (SELECT 
+			settlement_pid,
+			rccorp_pid,
+			IF(is_direct='Y', '다이렉트','찜카') AS is_direct,
+			is_direct AS is_direct_chk,
+			(SELECT area_code FROM rentcar_corp WHERE rentcar_corp.rccorp_pid = nmsettlement_price.rccorp_pid) AS area_code,
+			rccorp_name,
+			settl_sdate,
+			settl_edate,
+			settl_cycle,
+			if(mid(settl_edate, 7, 2) = 15, date_add(DATE_FORMAT(settl_edate, "%Y%m%d"), interval +11 day), date_add(DATE_FORMAT(settl_edate, "%Y%m%d"),interval +11 day )) AS settl_finish_day,
+			IFNULL(corp_bank_name,'미등록 ') 								AS corp_bank_name,
+			IFNULL(corp_bank_num,' 미등록 ') 								AS corp_bank_num,
+			IFNULL(corp_bank_holder,' 미등록 ') 							AS corp_bank_holder,
+			rentcar_price,
+			insu_price,
+			extra_charge,
+			settl_extracharge_price,
+			settl_rentcar_sum_price,
+			cancel_rentcar_price,
+			cancel_insu_price,
+			cancel_extra_charge,
+			settl_refund_price,
+			settl_consign_price,
+			settl_final_price,
+			IF(is_direct = 'Y', ROUND((settl_final_price/10),0),0 )AS tax_settl_final_price,
+			IF(is_direct = 'Y', ROUND((settl_final_price+(settl_final_price/10)),0),settl_final_price )AS tax_sum_settl_final_price,
+			zimcar_fee,
+			rate_settl_rentcar,
+			rate_settl_extra_charge,
+			rate_cancel_in_rent24,
+			rate_bankruptcy_booking,
+			CASE settl_status
+				WHEN '00' THEN 	 '정산등록'
+				WHEN '01'   THEN '인보이스발행'
+				WHEN '99'   THEN '정산처리'
+			ELSE settl_status
+			END	AS settl_status,
+			(SELECT mem_name FROM member_master WHERE mem_pid = settl_mem_pid) AS settl_mem_pid,
+			settl_dtime,
+			reg_dtime,
+			mod_dtime
+		FROM nmsettlement_price
+		WHERE settl_status != 10
+			<if test="rccorpName != null and rccorpName != '' ">
+				AND rccorp_name like ('%${rccorpName}%')
+			</if>
+			            
+			<if test="settlInSdtime != null and settlInSdtime != '' ">
+				<![CDATA[
+					AND DATE_FORMAT(settl_sdate, "%Y%m%d%H%i%s") >= DATE_FORMAT(REPLACE( #{settlInSdtime}, '-', '' ) , "%Y%m%d%H%i%s")
+				]]>
+			</if>
+			<if test="settlInEdtime != null and settlInEdtime != '' ">
+				<![CDATA[
+					AND DATE_FORMAT(settl_edate, "%Y%m%d%H%i%s") >= DATE_FORMAT(REPLACE( #{settlInEdtime}, '-', '' ) , "%Y%m%d%H%i%s")
+				]]>
+			</if>
+			AND (rentcar_price + insu_price) != (cancel_rentcar_price + cancel_insu_price)
+	   ) T1
+	   WHERE 1=1
+	       <if test="areacodeView != null and areacodeView != '' ">
+                AND area_code = #{areacodeView}
+            </if>
+	   
+	   ORDER BY settlement_pid DESC		
+	   <if test="offset != null and row_count != null">
+		  LIMIT ${offset}, ${row_count}
+	   </if>
+	</select>
+	
+	<!-- 정산상세리스트조회 -->
+	<select id="selectSettlementDetail" parameterType="Map" resultType="rm">
+		<![CDATA[
+			SELECT SQL_CALC_FOUND_ROWS
+				ST.rccorp_pid,
+				ST.is_direct,
+				(SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,	
+	            ST.booking_sdtime,																																						/* 예약 시작일 */	
+	            ST.booking_edtime,																																						/* 예약 종료일 */	
+	            ST.price_sale_zimcar,																																					/* 찜카 실 판매가격 */
+			    IFNULL(ST.price_sale,0) AS price_sale,																														/* 차량금액 */	
+			    IFNULL(ST.price_insu_sale,0) AS price_insu_sale,																									/* 보험금액 */
+			    IFNULL(ST.extracharge_price,0) AS extracharge_price,																						/* 할증금액 */
+			    IFNULL(CANCEL.cancel_price_sale,0) AS cancel_price_sale,																				/* 취소 차량금액 */
+			    IFNULL(CANCEL.cancel_price_insu_sale,0) AS cancel_price_insu_sale,															/* 취소 보험금액 */
+			    IFNULL(CANCEL.cancel_extracharge_price,0) AS cancel_extracharge_price,												/* 취소 할증금액 */
+			    IFNULL(ST.price_consign_sum,0) AS price_consign_sum,
+			    IFNULL(ST.order_refund_sett_price,0) AS order_refund_sett_price																/* 예약환불수수료 정산금액 */
+			 FROM(
+				SELECT
+					rccorp_pid,
+			        provider_pid,
+			        rcorder_pid,
+			        is_direct,
+			        order_status,
+			        booking_sdtime,
+	                booking_edtime,
+					price_sale_zimcar,
+					price_sale,																	
+					price_insu_sale,	
+					price_consign_sum,														
+					ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+					ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+					(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+				FROM rentcar_order_master A
+				WHERE order_step='99'
+						AND pg_res_code = '0000'
+						AND order_status = '00'
+						AND is_direct = #{isDirectChk}
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settlSdate}, "%Y%m%d%H%i%s")
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settlEdate}, "%Y%m%d%H%i%s")
+			            AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+			) ST
+			LEFT OUTER JOIN (
+				SELECT 
+					rccorp_pid,
+					rcorder_pid,
+					order_status,
+					ifnull(price_sale,0) AS cancel_price_sale,									
+					ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+			        ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+				FROM rentcar_order_master
+				WHERE order_step='99'
+						AND order_status = '10'
+						AND pg_res_code = '0000'
+						AND is_direct = #{isDirectChk}
+						AND order_refund_price != 0
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settlSdate}, "%Y%m%d%H%i%s")
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settlEdate}, "%Y%m%d%H%i%s")
+			) AS CANCEL 
+			ON ST.rcorder_pid = CANCEL.rcorder_pid
+				WHERE ST.rccorp_pid = #{rccorpPid}
+					ORDER BY ST.booking_sdtime DESC
+		]]>
+		<if test="offset != null and row_count != null">
+			LIMIT ${offset}, ${row_count}
+		</if>
+	</select>
+	
+	<!-- 정산오더테이블조회 -->
+	<select id="selectSettlementOrderList" parameterType="Map" resultType="rm">
+			SELECT
+				ST.rccorp_pid,																																																										/* 렌트카 PID */
+				(SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,																		/* 렌트카명   */
+				(SELECT corp_bank_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_name,															/* 은행명 */
+			    (SELECT corp_bank_code FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_code,																/* 은행코드 */
+			    (SELECT corp_bank_num FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_num,																/* 계좌번호 */
+			    (SELECT corp_bank_holder FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_holder,															/* 예금주 */
+			    ST.settl_cycle,																																																										/* 정산 주기  */
+				IFNULL(SUM(ST.price_sale),0) AS price_sale,																																												/* 전체 차량금액 */	
+				IFNULL(SUM(ST.price_insu_sale),0) AS price_insu_sale,
+				IFNULL(SUM(ST.price_consign_sum),0) AS price_consign_sum,
+				IFNULL(SUM(ST.extracharge_price),0) AS extracharge_price,																																				/* 전체 할증금액 */
+			    IFNULL(SUM(CANCEL.cancel_price_sale),0) AS cancel_price_sale,																																		/* 취소 전체 차량금액 */
+			    IFNULL(SUM(CANCEL.cancel_price_insu_sale),0) AS cancel_price_insu_sale,																													/* 취소 전체 보험금액 */
+			    IFNULL(SUM(CANCEL.cancel_extracharge_price),0) AS cancel_extracharge_price,																										/* 취소 전체 할증금액 */
+			    IFNULL(SUM(ST.order_refund_sett_price),0) AS order_refund_sett_price,																														/* 전체 예약환불수수료 정산금액 */
+		<if test="rate_chk ==1">
+			    IFNULL((SELECT rate_settl FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),5) AS rate_settl_rentcar,/* 대여료 정산율 */
+			    IFNULL((SELECT rate_settl_extracharge FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),5) AS rate_settl_extra_charge,				/* 할증금 정산율 */
+			    IFNULL((SELECT rate_in_rent24 FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),0) AS rate_cancel_in_rent24,								/* 대여전 24이내 취소 */
+			    IFNULL((SELECT rate_bankruptcy_booking FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),90) AS rate_bankruptcy_booking	/* 예약 부도 수수로율 */
+		</if>
+		<if test="rate_chk ==0">		
+			    IFNULL((SELECT rate_settl FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),10) AS rate_settl_rentcar,													/* 대여료 정산율 */
+			    IFNULL((SELECT rate_settl_extracharge FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),50) AS rate_settl_extra_charge,				/* 할증금 정산율 */
+			    IFNULL((SELECT rate_in_rent24 FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),27) AS rate_cancel_in_rent24,								/* 대여전 24이내 취소 */
+			    IFNULL((SELECT rate_bankruptcy_booking FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid AND is_direct=#{is_direct}),90) AS rate_bankruptcy_booking		/* 예약 부도 수수로율 */
+		</if>
+			 FROM(
+				SELECT
+					rccorp_pid,
+					rcorder_pid,
+					provider_pid,
+					price_sale,																	
+					price_insu_sale,	
+					price_consign_sum,														
+					ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+					ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+					(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+				FROM rentcar_order_master A
+				WHERE order_step='99'
+						AND pg_res_code = '0000'
+						AND order_status = '00'
+						AND is_direct = #{is_direct}
+						<![CDATA[
+							AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settl_sdate}, "%Y%m%d%H%i%s")
+							AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settl_edate}, "%Y%m%d%H%i%s")
+						]]>
+			            AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+			) ST
+			LEFT OUTER JOIN (
+				SELECT 
+					rccorp_pid,
+					rcorder_pid,
+					ifnull(price_sale,0) AS cancel_price_sale,									
+					ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+			        ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+				FROM rentcar_order_master
+				WHERE order_step='99'
+						AND order_status = '10'
+						AND pg_res_code = '0000'
+						AND is_direct = #{is_direct}
+						AND order_refund_price != 0
+						<![CDATA[
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settl_sdate}, "%Y%m%d%H%i%s")
+						AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settl_edate}, "%Y%m%d%H%i%s")
+						]]>
+			) AS CANCEL
+			ON ST.rcorder_pid = CANCEL.rcorder_pid 
+			GROUP BY ST.rccorp_pid
+	</select>
+	
+	<insert id="insertSettle" parameterType="Map">
+		INSERT INTO nmsettlement_price
+		(
+			rccorp_pid,
+			is_direct,
+			rccorp_name,
+			settl_sdate,
+			settl_edate,
+			settl_cycle,
+			rentcar_price,
+			insu_price,
+			extra_charge,
+			settl_extracharge_price,
+			settl_rentcar_sum_price,
+			cancel_rentcar_price,
+			cancel_insu_price,
+			cancel_extra_charge,
+			settl_refund_price,
+			settl_consign_price,
+			settl_final_price,
+			tax_settl_final_price,
+			zimcar_fee,
+			corp_bank_num,
+			corp_bank_name,
+			corp_bank_code,
+			corp_bank_holder,
+			rate_settl_rentcar,
+			rate_settl_extra_charge,
+			rate_cancel_in_rent24,
+			rate_bankruptcy_booking,
+			settl_status,
+			settl_mem_pid,
+			settl_dtime,
+			reg_dtime,
+			mod_dtime
+		) VALUES 
+		(
+			#{rccorp_pid},
+			#{is_direct},
+			#{rccorp_name},
+			#{sdate},
+			#{edate},
+			#{settl_cycle},
+			#{rentcar_price},
+			#{insu_price},
+			#{extra_charge},
+			#{settl_extracharge_price},
+			#{settl_rentcar_sum_price},
+			#{cancel_rentcar_price},
+			#{cancel_insu_price},
+			#{cancel_extra_charge},
+			#{settl_refund_price},
+			#{settl_consign_price},
+			#{settl_final_price},
+			#{tax_settl_final_price},
+			#{zimcar_fee},
+			#{corp_bank_num},
+			#{corp_bank_name},
+			#{corp_bank_code},
+			#{corp_bank_holder},
+			#{rate_settl_rentcar},
+			#{rate_settl_extra_charge},
+			#{rate_cancel_in_rent24},
+			#{rate_bankruptcy_booking},
+			#{settl_status},
+			#{settl_mem_pid},
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+	</insert>
+	
+	<!-- // 정산 인보이스 처리 -->
+	<select id="selectSettleInVoceList" parameterType="Map" resultType="rm">
+		SELECT
+			settlement_pid
+		FROM nmsettlement_price
+		<where>
+			<if test="rccorpName != null and rccorpName != '' ">
+				rccorp_name like ('%${rccorpName}%')
+			</if>
+		</where>
+
+		<if test="offset != null and row_count != null">
+			LIMIT ${offset}, ${row_count}
+		</if>
+	</select>
+	
+	<!-- // 정산 List Excel -->
+	<select id="selectSettlementListExcel" parameterType="Map" resultType="Map">
+		SELECT
+			rccorp_name,
+			IF(is_direct='Y', '다이렉트','찜카') AS is_direct,
+			settl_sdate,
+			settl_edate,
+			CASE settl_cycle
+				WHEN 'M2' THEN '월 2회'
+				WHEN NULL   THEN ''
+			ELSE settl_cycle
+			END								 											AS settl_cycle,
+			if(mid(settl_edate, 7, 2) = 15, date_add(DATE_FORMAT(settl_edate, "%Y%m%d"), interval +11 day), date_add(DATE_FORMAT(settl_edate, "%Y%m%d"),interval +11 day )) AS settl_finish_day,
+			IFNULL(settl_final_price,' ') 									AS settl_final_price,
+			IFNULL(corp_bank_name,'미등록 ') 					AS corp_bank_name,
+			IFNULL(corp_bank_num,' 미등록 ') 					AS corp_bank_num,
+			IFNULL(corp_bank_holder,' 미등록 ') 				AS corp_bank_holder,
+			IFNULL(zimcar_fee,' ') 											AS zimcar_fee,
+			IFNULL(rentcar_price,' ') 										AS rentcar_price,
+			IFNULL(insu_price,' ') 											AS insu_price,
+			IFNULL(cancel_rentcar_price,' ') 						AS cancel_rentcar_price,
+			IFNULL(cancel_insu_price,' ') 								AS cancel_insu_price,	
+			IFNULL(settl_rentcar_sum_price,' ') 					AS settl_rentcar_sum_price,
+			IFNULL(extra_charge,' ') 										AS extra_charge,
+			IFNULL(cancel_extra_charge,' ') 						AS cancel_extra_charge,
+			IFNULL(settl_extracharge_price,' ') 					AS settl_extracharge_price,
+			IFNULL(settl_refund_price,' ') 							AS settl_refund_price,
+			rate_settl_rentcar,
+			rate_settl_extra_charge,
+			rate_cancel_in_rent24,
+			rate_bankruptcy_booking,
+			settl_consign_price,
+			CASE settl_status
+				WHEN 00   THEN '정산등록'
+				WHEN 01   THEN '인보이스발행'
+				WHEN 99   THEN '정산처리'
+			ELSE settl_status
+			END	AS settl_status,
+			(SELECT mem_name FROM member_master WHERE mem_pid = settl_mem_pid) AS settl_mem_pid,
+			settl_dtime
+		FROM nmsettlement_price
+		WHERE 1=1
+		
+			<if test="rccorpName != null and rccorpName != '' ">
+				AND rccorp_name like ('%${rccorpName}%')
+			</if>
+			<if test="settlInSdtime != null and settlInSdtime != '' ">
+				<![CDATA[
+					AND DATE_FORMAT(settl_sdate, "%Y%m%d%H%i%s") >= DATE_FORMAT(REPLACE( #{settlInSdtime}, '-', '' ) , "%Y%m%d%H%i%s")
+				]]>
+			</if>
+			<if test="settlInEdtime != null and settlInEdtime != '' ">
+				<![CDATA[
+					AND DATE_FORMAT(settl_edate, "%Y%m%d%H%i%s") >= DATE_FORMAT(REPLACE( #{settlInEdtime}, '-', '' ) , "%Y%m%d%H%i%s")
+				]]>
+			</if>
+			AND (rentcar_price + insu_price) != (cancel_rentcar_price + cancel_insu_price)	
+			ORDER BY settlement_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT ${offset}, ${row_count}
+		</if>
+	</select>
+	
+	<!-- // 정산 DetailList Excel -->
+	<select id="selectSettlementDetailListExcel" parameterType="Map" resultType="Map">
+		<![CDATA[
+			SELECT
+					(SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,	
+		            ST.booking_sdtime,																																/* 예약 시작일 */	
+		            ST.booking_edtime,																																/* 예약 종료일 */	
+		            ST.price_sale_zimcar,					
+		            IFNULL(ST.price_consign_sum,0) AS price_consign_sum,																										/* 찜카 실 판매가격 */
+				    IFNULL(ST.price_sale,0) AS price_sale,																								/* 차량금액 */	
+				    IFNULL(ST.price_insu_sale,0) AS price_insu_sale,																			/* 보험금액 */
+				    IFNULL(CANCEL.cancel_price_sale,0) AS cancel_price_sale,														/* 취소 차량금액 */
+				    IFNULL(CANCEL.cancel_price_insu_sale,0) AS cancel_price_insu_sale,									/* 취소 보험금액 */
+				    IFNULL(ST.extracharge_price,0) AS extracharge_price,																/* 할증금액 */
+				    IFNULL(CANCEL.cancel_extracharge_price,0) AS cancel_extracharge_price,						/* 취소 할증금액 */
+				    IFNULL(ST.order_refund_sett_price,0) AS order_refund_sett_price										/* 예약환불수수료 정산금액 */
+				 FROM(
+					SELECT
+						rccorp_pid,
+				        provider_pid,
+				        rcorder_pid,
+				        booking_sdtime,
+		                booking_edtime,
+						price_sale_zimcar,
+						price_sale,																	
+						price_insu_sale,	
+						price_consign_sum,														
+						ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+						ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+						(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+					FROM rentcar_order_master A
+					WHERE order_step='99'
+							AND pg_res_code = '0000'
+							AND order_status = '00'
+							AND is_direct = #{isDirect}
+							AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settlSdate}, "%Y%m%d%H%i%s")
+						    AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settlEdate}, "%Y%m%d%H%i%s")
+				            AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+				) ST
+				LEFT OUTER JOIN (
+					SELECT 
+						rccorp_pid,
+						rcorder_pid,
+						ifnull(price_sale,0) AS cancel_price_sale,									
+						ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+				        ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+					FROM rentcar_order_master
+					WHERE order_step='99'
+							AND order_status = '10'
+							AND pg_res_code = '0000'
+							AND order_refund_price != 0
+							AND is_direct = #{isDirect}
+							AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") >= DATE_FORMAT(#{settlSdate}, "%Y%m%d%H%i%s")
+						    AND DATE_FORMAT(booking_sdtime, "%Y%m%d%H%i%s") <= DATE_FORMAT(#{settlEdate}, "%Y%m%d%H%i%s")
+				) AS CANCEL 
+				ON ST.rcorder_pid = CANCEL.rcorder_pid
+				WHERE ST.rccorp_pid = #{rccorpPid}
+					ORDER BY ST.booking_sdtime DESC
+		]]>
+			<if test="offset != null and row_count != null">
+				LIMIT ${offset}, ${row_count}
+			</if>
+	</select>
+	
+	<update id="updateSettlement" parameterType="Map">
+		UPDATE nmsettlement_price 
+			SET settl_status = #{settlStatus},
+			    settl_mem_pid = #{settl_mem_pid},
+			    mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE settlement_pid IN (${settleOkList})
+		<if test="settlStatus == '01' ">
+			AND settl_status != 99
+		</if>
+	</update>
+	
+	<select id="settlCnt" parameterType="Map" resultType="Map">
+		SELECT settlement_pid FROM nmsettlement_price
+			WHERE rccorp_pid = #{rccorp_pid}
+			AND is_direct = #{is_direct}
+			AND settl_sdate = #{sdate}
+			AND settl_edate = #{edate}
+	</select>
+	
+	<!-- 정산 완료 안된 특정 회사 정산 리스트 -->
+	<select id="getSettleMentListBeforeFinish" parameterType="Map" resultType="rm">
+        SELECT
+            settlement_pid
+        FROM nmsettlement_price
+        WHERE settl_status != '99'
+              AND rccorp_pid = #{rccorpPid}
+    </select>
+    
+    <update id="updateSettlementBankInfo" parameterType="Map">
+        UPDATE nmsettlement_price 
+            SET mod_dtime             = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                , corp_bank_num         = #{corp_bank_num}
+                , corp_bank_name        = #{corp_bank_name}
+                , corp_bank_code        = #{corp_bank_code}
+                , corp_bank_holder      = #{corp_bank_holder}
+        WHERE settlement_pid IN
+              <foreach collection="settList" item="pidList"  open="(" close=")" separator=",">
+                     #{pidList.settlementPid}
+              </foreach>
+    </update>
+	
+	
+	<!-- 정산 진행중인지 확인 -->
+	<select id="getSettlePriceInfo" parameterType="Map" resultType="rm">
+		SELECT
+			settlement_pid,
+			rccorp_pid,
+			rccorp_name,
+			settl_sdate,
+			settl_edate,
+			settl_cycle,
+			settl_consign_price,
+			rentcar_price,
+			insu_price,
+			zimcar_fee,
+			corp_bank_num,
+			corp_bank_name,
+			corp_bank_code,
+			corp_bank_holder,
+			rate_settl_rentcar,
+			rate_settl_extra_charge,
+			rate_cancel_in_rent24,
+			rate_bankruptcy_booking,
+			settl_status,
+			settl_mem_pid,
+			settl_dtime,
+			reg_dtime,
+			mod_dtime
+		FROM nmsettlement_price
+		WHERE date_format(settl_sdate,'%Y-%m-%d %H:%i:%s') >= date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s')
+		AND date_format(settl_edate,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]>  date_format(#{settlEdate},'%Y-%m-%d %H:%i:%s')		   
+		<if test="settleCheck != '' and settleCheck != null ">
+			AND rccorp_pid = #{rccorpPid}
+		</if>
+	
+	</select>
+	<!-- 
+	<select id="getSettlePriceWaitInfo" parameterType="Map" resultType="rm">
+		<![CDATA[
+		SELECT	SQL_CALC_FOUND_ROWS
+				ST.is_direct,
+				ST.rcorder_pid,
+				ST.rccorp_pid,
+				ST.booking_sdtime,
+				(SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,										/* 렌트카명   */
+				(SELECT corp_bank_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_name,									/* 은행명 */
+			    (SELECT corp_bank_code FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_code,									/* 은행코드 */
+			    (SELECT corp_bank_num FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_num,										/* 계좌번호 */
+			    (SELECT corp_bank_holder FROM provider_corp WHERE provider_pid = ST.provider_pid) AS bank_holder,								/* 예금주 */
+			    ST.settl_cycle,																													/* 정산 주기  */
+				IFNULL(SUM(ST.price_sale),0) AS price_sale,																						/* 전체 차량금액 */	
+				IFNULL(SUM(ST.price_insu_sale),0) AS price_insu_sale,																			/* 전체 보험금액 */
+				IFNULL(SUM(ST.extracharge_price),0) AS extracharge_price,																		/* 전체 할증금액 */
+			    IFNULL(SUM(CANCEL.cancel_price_sale),0) AS cancel_price_sale,																	/* 취소 전체 차량금액 */
+			    IFNULL(SUM(CANCEL.cancel_price_insu_sale),0) AS cancel_price_insu_sale,															/* 취소 전체 보험금액 */
+			    IFNULL(SUM(CANCEL.cancel_extracharge_price),0) AS cancel_extracharge_price,														/* 취소 전체 할증금액 */
+			    IFNULL(SUM(ST.order_refund_sett_price),0) AS order_refund_sett_price,															/* 전체 예약환불수수료 정산금액 */
+			    IFNULL((SELECT rate_settl FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid),10) AS rate_settl_rentcar,						/* 대여료 정산율 */
+			    IFNULL((SELECT rate_settl_extracharge FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid),50) AS rate_settl_extra_charge,		/* 할증금 정산율 */
+			    IFNULL((SELECT rate_in_rent24 FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid),27) AS rate_cancel_in_rent24,					/* 대여전 24이내 취소 */
+			    IFNULL((SELECT rate_bankruptcy_booking FROM rentcar_corp WHERE rccorp_pid = ST.rccorp_pid),90) AS rate_bankruptcy_booking		/* 예약 부도 수수로율 */
+			 FROM(
+				SELECT
+					is_direct,
+					booking_sdtime,
+					order_status,
+					rcorder_pid,
+					rccorp_pid,
+					provider_pid,
+					price_sale,																	
+					price_insu_sale,															
+					ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+					ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+					(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+				FROM rentcar_order_master A
+				WHERE order_step='99'
+						AND order_status != '20'
+						AND pg_res_code = '0000'
+					 	AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s')BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+					 	AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+				 ]]>
+				 <if test="isDirect != '' and isDirect != null">
+				 	AND is_direct = #{isDirect}
+				 </if>				
+			)ST
+			<![CDATA[
+			LEFT JOIN (
+				SELECT
+					rcorder_pid, 
+					rccorp_pid,
+					order_status,
+					ifnull(price_sale,0) AS cancel_price_sale,									
+					ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+			        ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+				FROM rentcar_order_master
+				WHERE order_step='99'
+						AND order_status = '10'
+						AND pg_res_code = '0000'
+						AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+				]]>
+				 <if test="isDirect != '' and isDirect != null">
+				 	AND is_direct = #{isDirect}
+				 </if>								
+			) AS CANCEL  ON ST.rcorder_pid = CANCEL.rcorder_pid
+			
+			 WHERE 1=1
+			 <if test="rccorpPidList != '' and rccorpPidList != null">
+			 	AND ST.rccorp_pid NOT IN
+			 	<foreach collection="rccorpPidList" item="rcPid" open="(" separator="," close=")">
+			 		#{rcPid}
+			 	</foreach>
+			 </if>
+			 <if test="rccorpPid != '' and rccorpPid != null">
+			 	AND ST.rccorp_pid = #{rccorpPid}
+			 </if>	 
+			 <if test="searchSdate != '' and searchSdate != null and searchEdate != '' and searchEdate != null">
+				AND date_format(ST.booking_sdtime,'%Y-%m-%d') BETWEEN date_format(#{searchSdate},'%Y-%m-%d') AND date_format(#{searchEdate},'%Y-%m-%d')
+			 </if>
+			 AND (ifnull(price_sale,0) + ifnull(price_insu_sale,0)) != (ifnull(cancel_price_sale,0) + ifnull(cancel_price_insu_sale,0))			 
+			 GROUP BY ST.rccorp_pid
+			 ORDER BY ST.rcorder_pid DESC
+			limit #{offset}, #{row_count}
+	</select> -->	
+
+	<select id="getSettlePriceWaitInfo" parameterType="Map" resultType="rm">
+					<![CDATA[
+						SELECT
+							T1.*
+						FROM 
+							(SELECT	
+								ST1.is_direct,
+								ST1.rcorder_pid,
+								ST1.rccorp_pid,
+								ST1.booking_sdtime,
+								(SELECT area_code FROM rentcar_corp WHERE rccorp_pid = ST1.rccorp_pid) AS area_code,
+								(SELECT corp_name FROM provider_corp WHERE provider_pid = ST1.provider_pid) AS rccorp_name,										/* 렌트카명   */
+								(SELECT corp_bank_name FROM provider_corp WHERE provider_pid = ST1.provider_pid) AS bank_name,									/* 은행명 */
+								(SELECT corp_bank_code FROM provider_corp WHERE provider_pid = ST1.provider_pid) AS bank_code,									/* 은행코드 */
+								(SELECT corp_bank_num FROM provider_corp WHERE provider_pid = ST1.provider_pid) AS bank_num,										/* 계좌번호 */
+								(SELECT corp_bank_holder FROM provider_corp WHERE provider_pid = ST1.provider_pid) AS bank_holder,								/* 예금주 */
+								ST1.settl_cycle,																													/* 정산 주기  */
+								IFNULL(SUM(ST1.price_consign_sum),0) AS price_consign_sum,
+								IFNULL(SUM(ST1.price_sale),0) AS price_sale,																						/* 전체 차량금액 */	
+								IFNULL(SUM(ST1.price_insu_sale),0) AS price_insu_sale,																			/* 전체 보험금액 */
+								IFNULL(SUM(ST1.extracharge_price),0) AS extracharge_price,																		/* 전체 할증금액 */
+								IFNULL(SUM(CANCEL1.cancel_price_sale),0) AS cancel_price_sale,																	/* 취소 전체 차량금액 */
+								IFNULL(SUM(CANCEL1.cancel_price_insu_sale),0) AS cancel_price_insu_sale,															/* 취소 전체 보험금액 */
+								IFNULL(SUM(CANCEL1.cancel_extracharge_price),0) AS cancel_extracharge_price,														/* 취소 전체 할증금액 */
+								IFNULL(SUM(ST1.order_refund_sett_price),0) AS order_refund_sett_price,															/* 전체 예약환불수수료 정산금액 */
+								IFNULL((SELECT rate_settl FROM rentcar_corp WHERE rccorp_pid = ST1.rccorp_pid),10) AS rate_settl_rentcar,						/* 대여료 정산율 */
+								IFNULL((SELECT rate_settl_extracharge FROM rentcar_corp WHERE rccorp_pid = ST1.rccorp_pid),50) AS rate_settl_extra_charge,		/* 할증금 정산율 */
+								IFNULL((SELECT rate_in_rent24 FROM rentcar_corp WHERE rccorp_pid = ST1.rccorp_pid),27) AS rate_cancel_in_rent24,					/* 대여전 24이내 취소 */
+								IFNULL((SELECT rate_bankruptcy_booking FROM rentcar_corp WHERE rccorp_pid = ST1.rccorp_pid),90) AS rate_bankruptcy_booking		/* 예약 부도 수수로율 */
+							 FROM(
+								SELECT
+									is_direct,
+									booking_sdtime,
+									order_status,
+									rcorder_pid,
+									rccorp_pid,
+									provider_pid,
+									price_sale,																	
+									price_insu_sale,			
+									if(order_status = '00', price_consign_sum, 0) as price_consign_sum,												
+									ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+									ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+									(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+								FROM rentcar_order_master A
+								WHERE order_step='99'
+										AND order_status != '20'
+										AND pg_res_code = '0000'
+										AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+										AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+										AND is_direct = 'N'
+			
+							)ST1
+			
+							LEFT JOIN (
+								SELECT
+									rcorder_pid, 
+									rccorp_pid,
+									order_status,
+									ifnull(price_sale,0) AS cancel_price_sale,									
+									ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+									ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+								FROM rentcar_order_master
+								WHERE order_step='99'
+										AND order_status = '10'
+										AND pg_res_code = '0000'
+										AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+										AND is_direct = 'N'
+					
+							) AS CANCEL1  ON ST1.rcorder_pid = CANCEL1.rcorder_pid
+						   GROUP BY ST1.rccorp_pid
+		               
+					UNION 
+					
+		            		SELECT	
+							ST2.is_direct,
+							ST2.rcorder_pid,
+							ST2.rccorp_pid,
+							ST2.booking_sdtime,
+							(SELECT area_code FROM rentcar_corp WHERE rccorp_pid = ST2.rccorp_pid) AS area_code,
+							(SELECT corp_name FROM provider_corp WHERE provider_pid = ST2.provider_pid) AS rccorp_name,										/*다이렉트 렌트카명   */
+							(SELECT corp_bank_name FROM provider_corp WHERE provider_pid = ST2.provider_pid) AS bank_name,									/*다이렉트  은행명 */
+							(SELECT corp_bank_code FROM provider_corp WHERE provider_pid = ST2.provider_pid) AS bank_code,									/*다이렉트  은행코드 */
+							(SELECT corp_bank_num FROM provider_corp WHERE provider_pid = ST2.provider_pid) AS bank_num,									/*다이렉트  계좌번호 */
+							(SELECT corp_bank_holder FROM provider_corp WHERE provider_pid = ST2.provider_pid) AS bank_holder,								/*다이렉트  예금주 */
+							ST2.settl_cycle,                                                                                                                /*다이렉트  정산 주기  */					
+							IFNULL(SUM(ST2.price_consign_sum),0) AS price_consign_sum,     																							
+							IFNULL(SUM(ST2.price_sale),0) AS price_sale,																					/*다이렉트  전체 차량금액 */	
+							IFNULL(SUM(ST2.price_insu_sale),0) AS price_insu_sale,																			/*다이렉트  전체 보험금액 */
+							IFNULL(SUM(ST2.extracharge_price),0) AS extracharge_price,																		/*다이렉트  전체 할증금액 */
+							IFNULL(SUM(CANCEL2.cancel_price_sale),0) AS cancel_price_sale,																	/*다이렉트  취소 전체 차량금액 */
+							IFNULL(SUM(CANCEL2.cancel_price_insu_sale),0) AS cancel_price_insu_sale,														/*다이렉트  취소 전체 보험금액 */
+							IFNULL(SUM(CANCEL2.cancel_extracharge_price),0) AS ancel_extracharge_price,														/*다이렉트  취소 전체 할증금액 */
+							IFNULL(SUM(ST2.order_refund_sett_price),0) AS order_refund_sett_price,															/*다이렉트  전체 예약환불수수료 정산금액 */
+							IFNULL((SELECT dir_rate_settl FROM rentcar_corp WHERE rccorp_pid = ST2.rccorp_pid),5) AS rate_settl_rentcar,					/*다이렉트  대여료 정산율 */
+							IFNULL((SELECT dir_rate_settl_extracharge FROM rentcar_corp WHERE rccorp_pid = ST2.rccorp_pid),5) AS rate_settl_extra_charge,	/*다이렉트  할증금 정산율 */
+							IFNULL((SELECT dir_rate_in_rent24 FROM rentcar_corp WHERE rccorp_pid = ST2.rccorp_pid),0) AS rate_cancel_in_rent24,				/*다이렉트  대여전 24이내 취소 */
+							IFNULL((SELECT dir_rate_bankruptcy_booking FROM rentcar_corp WHERE rccorp_pid = ST2.rccorp_pid),90) AS rate_bankruptcy_booking	/*다이렉트  예약 부도 수수로율 */
+						 FROM(
+							SELECT
+								is_direct,
+								booking_sdtime,
+								order_status,
+								rcorder_pid,
+								rccorp_pid,
+								provider_pid,
+								price_sale,																	
+								price_insu_sale,	
+								price_consign_sum,														
+								ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+								ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+								(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+							FROM rentcar_order_master A
+							WHERE order_step='99'
+									AND order_status != '20'
+									AND pg_res_code = '0000'
+									AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+									AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+									AND is_direct = 'Y'
+		
+						)ST2
+		
+						LEFT JOIN (
+							SELECT
+								rcorder_pid, 
+								rccorp_pid,
+								order_status,
+								ifnull(price_sale,0) AS cancel_price_sale,									
+								ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+								ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+							FROM rentcar_order_master
+							WHERE order_step='99'
+									AND order_status = '10'
+									AND pg_res_code = '0000'
+									AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{toDay},'%Y-%m-%d %H:%i:%s')
+									AND is_direct = 'Y'
+				
+						) AS CANCEL2  ON ST2.rcorder_pid = CANCEL2.rcorder_pid
+						GROUP BY ST2.rccorp_pid
+					)T1
+					]]>				
+						 WHERE 1=1
+						 <if test="areacode_view != '' and areacode_view != null">
+						 	AND T1.area_code = #{areacode_view}
+						 </if>
+						 <if test="rccorpName != null and rccorpName !=''">
+		                    AND UPPER(T1.rccorp_name) LIKE UPPER(CONCAT('%',#{rccorpName},'%'))
+		                 </if>
+						 <if test="searchSdate != '' and searchSdate != null and searchEdate != '' and searchEdate != null">
+							AND date_format(T1.booking_sdtime,'%Y-%m-%d') BETWEEN date_format(#{searchSdate},'%Y-%m-%d') AND date_format(#{searchEdate},'%Y-%m-%d')
+						 </if>
+						 AND (ifnull(price_sale,0) + ifnull(price_insu_sale,0)) != (ifnull(cancel_price_sale,0) + ifnull(cancel_price_insu_sale,0))
+						 ORDER BY T1.rccorp_name ASC
+						limit #{offset}, #{row_count}
+	</select>	
+
+	
+	
+<!-- 	  정산 상세 대기 현황 -->
+	<!-- <select id="getSettlePriceWaitDetailInfo" parameterType="Map" resultType="rm">
+			<![CDATA[
+			SELECT
+					ST.is_direct,
+					(SELECT model_name FROM rentcar_model_master WHERE rcmodel_pid = ST.rcmodel_pid)as model_name,
+					(SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,	
+		            ST.booking_sdtime,																					/* 예약 시작일 */	
+		            ST.booking_edtime,
+		            ST.rcorder_pid,
+		            CASE ST.order_status WHEN '10' THEN '취소'
+		            ELSE '정상'
+		            END AS order_status,																			/* 예약 종료일 */	
+		            ST.price_sale_zimcar,																				/* 찜카 실 판매가격 */
+		            IFNULL(ST.price_consign_sum,0) AS price_consign_sum,
+				    IFNULL(ST.price_sale,0) AS price_sale,																/* 차량금액 */	
+				    IFNULL(ST.price_insu_sale,0) AS price_insu_sale,													/* 보험금액 */
+				    IFNULL(ST.extracharge_price,0) AS extracharge_price,												/* 할증금액 */
+				    IFNULL(CANCEL.cancel_price_sale,0) AS cancel_price_sale,											/* 취소 차량금액 */
+				    IFNULL(CANCEL.cancel_price_insu_sale,0) AS cancel_price_insu_sale,									/* 취소 보험금액 */
+				    IFNULL(CANCEL.cancel_extracharge_price,0) AS cancel_extracharge_price,								/* 취소 할증금액 */
+				    IFNULL(ST.order_refund_sett_price,0) AS order_refund_sett_price										/* 예약환불수수료 정산금액 */
+				 FROM(
+					SELECT
+						is_direct,
+						rcorder_pid,
+						rcmodel_pid,
+						order_status,
+						rccorp_pid,
+				        provider_pid,
+				        booking_sdtime,
+		                booking_edtime,
+						price_sale_zimcar,
+						price_sale,																	
+						price_insu_sale,
+						price_consign_sum,															
+						ifnull((price_sale_zimcar- price_sale), 0) AS extracharge_price,			
+						ifnull(order_refund_sett_price,0) AS order_refund_sett_price,
+						(SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) AS settl_cycle
+					FROM rentcar_order_master A
+					WHERE order_step='99'
+							AND order_status = '00'
+							AND pg_res_code = '0000'
+							AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{today},'%Y-%m-%d %H:%i:%s')
+				            AND (SELECT settl_cycle FROM rentcar_corp WHERE rccorp_pid = A.rccorp_pid) = 'M2'
+							AND rccorp_pid = #{rccorpPid}
+							AND is_direct= #{isDirect}
+				) ST
+				LEFT OUTER JOIN (
+					SELECT
+						rccorp_pid,
+						ifnull(price_sale,0) AS cancel_price_sale,									
+						ifnull(price_insu_sale,0) AS cancel_price_insu_sale,						
+				        ifnull((price_sale_zimcar- price_sale), 0) AS cancel_extracharge_price
+					FROM rentcar_order_master
+					WHERE order_step='99'
+							AND order_status = '10'
+							AND pg_res_code = '0000'
+							AND order_refund_price != 0
+							AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{today},'%Y-%m-%d %H:%i:%s')
+							AND rccorp_pid = #{rccorpPid}
+							AND is_direct= #{isDirect}
+				) AS CANCEL ON ST.rccorp_pid = CANCEL.rccorp_pid
+				WHERE 1=1
+				ORDER BY rccorp_name ASC, FIELD(order_status,'00','10'), ST.booking_sdtime DESC
+			]]>
+			limit #{offset}, #{row_count}
+	</select> -->
+	<select id="getSettlePriceWaitDetailInfo" parameterType="Map" resultType="rm">
+	       <![CDATA[
+	       SELECT 
+			    is_direct,
+			    (SELECT model_name FROM rentcar_model_master WHERE rcmodel_pid = ST.rcmodel_pid)as model_name,
+                (SELECT corp_name FROM provider_corp WHERE provider_pid = ST.provider_pid) AS rccorp_name,
+			    rcorder_pid,
+			    rcmodel_pid,
+			    order_status,
+			    rccorp_pid,
+			    provider_pid,
+			    booking_sdtime,
+			    booking_edtime,
+			    price_sale_zimcar,
+			    price_sale,
+			    price_insu_sale,
+			    (price_sale_zimcar - price_sale) AS extracharge_price,
+			    IF(order_status = '00', price_consign_sum, 0) AS price_consign_sum,
+			    IF(order_status = '10', price_sale, 0) AS cancel_price_sale,
+			    IF(order_status = '10', price_insu_sale, 0) AS cancel_price_insu_sale,
+			    IF(order_status = '10', price_sale_zimcar - price_sale, 0) AS cancel_extracharge_price,
+			    order_refund_sett_price,
+			    (SELECT 
+			            settl_cycle
+			        FROM
+			            rentcar_corp
+			        WHERE
+			            rccorp_pid = ST.rccorp_pid) AS settl_cycle
+			FROM
+			    rentcar_order_master ST
+			WHERE
+			    order_step = '99'
+			        AND pg_res_code = '0000'
+			        AND date_format(booking_sdtime,'%Y-%m-%d %H:%i:%s') BETWEEN date_format(#{settlSdate},'%Y-%m-%d %H:%i:%s') AND date_format(#{today},'%Y-%m-%d %H:%i:%s')
+			        AND rccorp_pid = #{rccorpPid}
+                    AND is_direct= #{isDirect}
+			        AND (order_status = '00' OR order_status = '10')
+			        AND (SELECT 
+			            settl_cycle
+			        FROM
+			            rentcar_corp
+			        WHERE
+			            rccorp_pid = ST.rccorp_pid) = 'M2'
+		    ]]>
+            limit #{offset}, #{row_count}       
+	</select>
+	
+	<select id="getDomainCheck" parameterType="Map" resultType="rm">
+	   SELECT  rccorp_pid
+	     FROM  rentcar_corp
+	    WHERE  dir_domain = #{dir_domain}
+	           AND rccorp_pid != #{rccorp_pid}
+	</select>
+	
+	<!-- 다이렉트 업체리스트 -->
+	<select id="select_rentcarManager_corp" parameterType="Map" resultType="rm">
+		SELECT	SQL_CALC_FOUND_ROWS
+				ST.corp_name, RC.rccorp_pid, RC.is_direct 
+  		  FROM	provider_corp ST, rentcar_corp RC
+ 		 WHERE	ST.provider_pid = RC.provider_pid
+   		   AND	RC.is_direct = 'Y'
+   		   AND	ST.corp_status = '10'
+   		   AND	RC.corp_status = '10'
+	</select>
+</mapper>

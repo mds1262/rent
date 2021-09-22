@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ProviderExtrachargeDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<insert id="insert_base" parameterType="Map">
+		INSERT INTO rentcar_extracharge
+		(
+			rccorp_pid			, charge_sdate		, charge_edate		,
+			car_class_01_rate	, car_class_02_rate	, car_class_03_rate	, car_class_04_rate	,
+			car_class_05_rate	, car_class_06_rate	, car_class_07_rate	,
+			reg_mem_pid			, mod_mem_pid		,
+			reg_dtime			, mod_dtime
+		) VALUES (
+			#{rccorp_pid}			, #{charge_sdate}		, #{charge_edate}		,
+			#{car_class_01_rate}	, #{car_class_02_rate}	, #{car_class_03_rate}	, #{car_class_04_rate}	,
+			#{car_class_05_rate}	, #{car_class_06_rate}	, #{car_class_07_rate}	,
+			#{reg_mem_pid}			, #{mod_mem_pid}		,
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="rccharge_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	rentcar_extracharge
+		   SET
+		   		charge_sdate		= #{charge_sdate}		,
+		   		charge_edate		= #{charge_edate}		,
+				car_class_01_rate 	= #{car_class_01_rate}	,
+				car_class_02_rate 	= #{car_class_02_rate}	,
+				car_class_03_rate 	= #{car_class_03_rate}	,
+				car_class_04_rate 	= #{car_class_04_rate}	,
+				car_class_05_rate 	= #{car_class_05_rate}	,
+				car_class_06_rate 	= #{car_class_06_rate}	,
+				car_class_07_rate 	= #{car_class_07_rate}	,
+				mod_mem_pid 		= #{mod_mem_pid}		,
+				mod_dtime 			= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	rccharge_pid 		= #{rccharge_pid}
+	</update>
+	
+	<delete id="delete_by_pk" parameterType="int">
+		DELETE	FROM rentcar_extracharge 
+		 WHERE	rccharge_pid = #{rccharge_pid}		
+	</delete>
+		
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT	rccharge_pid		,
+			    rccorp_pid			,
+			    charge_sdate		,
+			    charge_edate		,
+			    car_class_01_rate	,
+			    car_class_02_rate	,
+			    car_class_03_rate	,
+			    car_class_04_rate	,
+			    car_class_05_rate	,
+			    car_class_06_rate	,
+			    car_class_07_rate	,
+			    reg_mem_pid			,
+			    mod_mem_pid			,
+			    reg_dtime			,
+			    mod_dtime
+		  FROM	rentcar_extracharge
+		  
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	rccharge_pid		,
+			    rccorp_pid			,
+			    charge_sdate		,
+			    charge_edate		,
+			    car_class_01_rate	,
+			    car_class_02_rate	,
+			    car_class_03_rate	,
+			    car_class_04_rate	,
+			    car_class_05_rate	,
+			    car_class_06_rate	,
+			    car_class_07_rate	,
+			    reg_mem_pid			,
+			    mod_mem_pid			,
+			    reg_dtime			,
+			    mod_dtime
+		  FROM	rentcar_extracharge 
+		 WHERE	rccharge_pid = #{rccharge_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+	
+	<select id="select_by_corp_pid" parameterType="int"  resultType="rm">
+		SELECT	rccharge_pid		,
+			    rccorp_pid			,
+			    charge_sdate		,
+			    charge_edate		,
+			    car_class_01_rate	,
+			    car_class_02_rate	,
+			    car_class_03_rate	,
+			    car_class_04_rate	,
+			    car_class_05_rate	,
+			    car_class_06_rate	,
+			    car_class_07_rate	,
+			    reg_mem_pid			,
+			    mod_mem_pid			,
+			    reg_dtime			,
+			    mod_dtime
+		  FROM	rentcar_extracharge ST, rentcar_corp RC
+		 WHERE	ST.rccorp_pid = RC.rccorp_pid
+		   AND  RC.provider_pid = #{provider_pid}
+	</select>
+	
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		SELECT	SQL_CALC_FOUND_ROWS
+				ST.rccharge_pid			,
+                PC.corp_public_name		,
+				ST.charge_sdate			,
+				ST.charge_edate			,
+				ST.car_class_01_rate	,
+				ST.car_class_02_rate	,
+				ST.car_class_03_rate	,
+				ST.car_class_04_rate	,
+				ST.car_class_05_rate	,
+				ST.car_class_06_rate	,
+				ST.car_class_07_rate	,
+				ST.reg_mem_pid			,
+				ST.mod_mem_pid			,
+				ST.reg_dtime			,
+				ST.mod_dtime		
+		  FROM	rentcar_extracharge ST, provider_corp PC, rentcar_corp RC
+		 WHERE	ST.charge_status != '9'
+		   AND	PC.corp_status not in ('99','00')
+           AND	RC.corp_status not in ('99','00')
+           AND	ST.rccorp_pid = RC.rccorp_pid
+           AND	RC.provider_pid = PC.provider_pid
+		   <if test="search_type!=null">
+		      <choose> 
+			     <when test="search_type=='corp_public_name'">
+			 	   AND ${search_type} like '%${search_value}%'
+			 	 </when> 
+		 	     <otherwise> 
+			 	  AND ${search_type} like '${search_value}%'
+			 	 </otherwise> 
+		 	  </choose>
+		   </if>
+		   <if test="areacode_view !=null and areacode_view !=''">
+              AND RC.area_code = #{areacode_view}
+           </if> 
+		ORDER BY ST.rccharge_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+	<select id="select_by_view" parameterType="int"  resultType="rm">
+		SELECT	ST.rccharge_pid			,
+				PC.corp_public_name		,
+				ST.rccorp_pid           ,
+				ST.charge_sdate			,
+				ST.charge_edate			,
+				ST.car_class_01_rate	,
+				ST.car_class_02_rate	,
+				ST.car_class_03_rate	,
+				ST.car_class_04_rate	,
+				ST.car_class_05_rate	,
+				ST.car_class_06_rate	,
+				ST.car_class_07_rate	,
+				ST.reg_mem_pid			,
+				ST.mod_mem_pid			,
+				ST.reg_dtime			,
+				ST.mod_dtime
+		  FROM	rentcar_extracharge ST, provider_corp PC, rentcar_corp RC
+		 WHERE	ST.rccorp_pid = RC.rccorp_pid
+		   AND	RC.provider_pid = PC.provider_pid
+		   AND	ST.rccharge_pid = #{rccharge_pid}
+	</select>
+	
+	<update id="update_delete" parameterType="Map">
+		UPDATE	rentcar_extracharge 
+	       SET	charge_status	= '9'			,
+				mod_mem_pid	= #{mod_mem_pid}	,
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	rccharge_pid = #{rccharge_pid}		
+	</update>
+	
+	<select id="select_by_datecheck" parameterType="Map"  resultType="rm">
+		<![CDATA[
+		SELECT	COUNT(charge_sdate)AS charge_sdate,
+				COUNT(charge_edate)AS charge_edate
+		  FROM	rentcar_extracharge
+		 WHERE	charge_status = 1
+		   AND	charge_sdate <= #{charge_edate}
+		   AND	charge_edate >= #{charge_sdate}
+		   AND  rccorp_pid = #{rccorp_pid}
+		]]>
+		<if test="rccharge_pid != null and rccharge_pid !=''">
+		   AND  rccharge_pid != #{rccharge_pid}
+		</if>
+	</select>
+</mapper>

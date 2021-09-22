@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="menuauthority">
+
+	<select id="getAuthorityMember" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				mem_pid,
+				mem_id,
+				mem_pwd,
+				mem_name,
+				mem_birth,
+				mem_email,
+				mem_phone,
+				mem_isauth,
+				auth_num,
+				filter_car_type,
+				filter_car_option,
+				filter_car_eval,
+				filter_car_mk,
+				filter_car_fuel,
+				filter_car_year,
+				filter_car_insu,
+				device_type,
+				mem_point,
+				push_id,
+				mem_type,
+				mem_level,
+				last_login_dtime,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_master	
+		WHERE 1=1
+		AND mem_isauth ='Y'
+		AND mem_status = '1'
+		<if test="getMemId != null and getList == null ">
+		AND mem_type = 00
+		</if>
+		<if test='getList == "OK"'>
+		AND mem_type = 90
+		</if>
+		<if test='memIdCheck == null'>
+			<if test="memId != null and memId != ''">
+				AND mem_id LIKE concat('%',#{memId},'%')
+			</if>
+		</if>
+		<if test='memIdCheck != null'>
+			<if test="memId != null and memId != ''">
+				AND mem_Id = #{memId}
+			</if>
+		</if>				
+		ORDER BY mem_pid DESC
+		<if test='getList == "OK"'>
+			<if test="offset != null and row_count != null">
+				LIMIT #{offset}, #{row_count}
+			</if>
+			<if test="offset == null or row_count == null">
+				LIMIT 0, 10
+			</if>
+		</if>
+	</select>
+ 
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+	
+		
+	<update id="deleteMemberAuthority" parameterType="Map" >
+	
+	UPDATE member_master SET 
+		 	mem_type = '00'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				mem_pid IN
+				<foreach collection="memberPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			mem_pid = #{memPid}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<update id="deletemenuAuthority" parameterType="Map" >
+	
+	UPDATE member_role SET 
+		 	menu_is_use = 'N'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				mem_pid IN
+				<foreach collection="memberPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			mem_pid = #{memPid}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<insert id="insertmenuAuthority" parameterType="Map">
+		INSERT INTO member_role
+				(
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime,
+				mod_dtime
+				)
+				VALUES
+				(
+				#{memPid },
+				#{menuPid },
+				'Y',
+				#{sessionPid },
+				#{sessionPid },
+				now() + 0,
+				now() + 0
+				)
+	
+	</insert>
+	
+	<update id="updateMemberAuthority" parameterType="Map">
+		UPDATE member_master SET 
+			<if test="delAuth == null">
+				<if test="memLevel != 99">
+				mem_type = '90',
+				mem_level = 01,
+				</if>
+				<if test="memLevel == 99">
+				mem_type = '90',
+				mem_level = 99,
+				</if>
+			</if>
+			<if test="delAuth != '' and delAuth != null">
+				mem_level = '00',
+				mem_type = '00',
+			</if>
+			mod_dtime = now() + 0 
+			WHERE 
+			<if test="delAuth == '' or delAuth == null">
+			mem_pid = #{memPid}
+			</if>
+			<if test="delAuth != '' and delAuth != null">
+				<choose>
+					<when test = "PidSize > 0" >
+						mem_pid IN
+						<foreach collection="memberPidList" item="pidList"  open="(" close=")" separator=",">
+		           			 #{pidList}
+		       			 </foreach>
+					</when>
+					<otherwise>
+						mem_pid = #{memPid}
+					</otherwise>
+				</choose>
+			</if>
+	</update>
+	
+	<select id="getMemberAuthorityView" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				mem_pid,
+				mem_id,
+				mem_pwd,
+				mem_name,
+				mem_birth,
+				mem_email,
+				mem_phone,
+				mem_isauth,
+				auth_num,
+				filter_car_type,
+				filter_car_option,
+				filter_car_eval,
+				filter_car_mk,
+				filter_car_fuel,
+				filter_car_year,
+				filter_car_insu,
+				device_type,
+				mem_point,
+				push_id,
+				mem_type,
+				mem_level,
+				last_login_dtime,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_master	
+		WHERE mem_pid = #{memPid}
+	</select>
+	
+	<select id="getMenuAuthorityView" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				role_pid,
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_role	
+		WHERE
+		menu_is_use = 'Y' 
+		AND mem_pid = #{memPid}
+	</select>
+	
+	<select id="checkRoleMenu" parameterType="Map" resultType="rm" >
+		SELECT SQL_CALC_FOUND_ROWS
+				role_pid,
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_role	
+		WHERE
+		menu_is_use = 'Y'
+		AND mem_pid = #{memPid}
+	</select>
+	
+	<select id="getCheckRoleMenu" parameterType="Map" resultType="rm" >
+		SELECT SQL_CALC_FOUND_ROWS
+				role_pid,
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_role	
+		WHERE mem_pid = #{memPid}
+		<if test='DataEmpty == "Y"'>
+		AND menu_pid = #{menuPid}
+		</if>
+	</select>
+	
+	<update id="updateRoleUseChange" parameterType="Map">
+		UPDATE member_role SET 
+			<if test="useChange == 2">
+			menu_is_use = 'Y',
+			</if>
+			<if test="useChange == 1">
+			menu_is_use = 'N',
+			</if>
+			mod_mem_pid = #{modMemPid},
+			mod_dtime = now() + 0
+			WHERE mem_pid = #{memPid}
+			<if test="useChange == 2">
+			AND menu_pid = #{menuPid}
+			</if>
+	</update>
+	
+	<insert id="updatemenuAuthority" parameterType="Map">
+		INSERT INTO member_role
+				(
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime,
+				mod_dtime
+				)
+				VALUES
+				(
+				#{memPid },
+				#{menuPid },
+				'Y',
+				#{modMemPid },
+				#{modMemPid },
+				now() + 0,
+				now() + 0
+				)
+	
+	</insert>
+	<delete id="deleteAuthority" parameterType="Map">
+		DELETE FROM member_role
+		WHERE 
+		<if test="delAuth == '' or delAuth == null">
+				mem_pid = #{memPid}
+		</if>
+			<if test="delAuth != '' and delAuth != null">
+				<choose>
+					<when test = "PidSize > 0" >
+						mem_pid IN
+						<foreach collection="memberPidList" item="pidList"  open="(" close=")" separator=",">
+		           			 #{pidList}
+		       			 </foreach>
+					</when>
+					<otherwise>
+						mem_pid = #{memPid}
+					</otherwise>
+				</choose>
+			</if>
+	</delete>
+	<select id="getAuthorityPath" parameterType="Map" resultType="rm" >
+		SELECT SQL_CALC_FOUND_ROWS
+				role_pid,
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM member_role	
+		WHERE menu_pid = #{menuPid}
+		AND  mem_pid = #{memPid}
+		AND menu_is_use = 'Y'
+		
+	</select>
+	
+</mapper>

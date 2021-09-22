@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.DirectSkinDao">
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+        SELECT  
+                DL.*,
+                PC.corp_name
+          FROM  dir_layout DL, rentcar_corp RC, provider_corp PC
+         WHERE  DL.rccorp_pid = #{rccorp_pid}
+                AND DL.rccorp_pid = RC.rccorp_pid
+                AND RC.provider_pid = PC.provider_pid
+    </select>
+    
+    <insert id="insert_base" parameterType="Map">
+        INSERT INTO dir_layout
+            SET
+                rccorp_pid                  = #{rccorp_pid},
+                logo_img_url                = null,
+                main_title                  = #{corp_name},
+                sub_title                   = #{corp_name},
+                main_img_url                = null,
+                naver_site_verification     = null,
+                google_site_verification    = null,
+                skin_type                   = 'defaultRedSkin',
+                layout_type                 = 'default',
+                reg_mem_pid                 = #{reg_mem_pid},
+                reg_dtime                   = DATE_FORMAT(now(), "%Y%m%d%H%i%s"),
+                mod_mem_pid                 = #{reg_mem_pid},
+                mod_dtime                   = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="layout_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <select id="select_page" parameterType="Map"  resultType="rm">
+        
+        SELECT  SQL_CALC_FOUND_ROWS
+                DL.rccorp_pid,
+                DL.main_title,
+                DL.sub_title,
+                DL.skin_type,
+                DL.layout_type,
+                PC.corp_name,
+                RC.dir_domain
+          FROM  dir_layout DL, rentcar_corp RC, provider_corp PC
+         WHERE  DL.rccorp_pid = RC.rccorp_pid
+                AND RC.provider_pid = PC.provider_pid
+                AND RC.corp_status != '99'
+                AND PC.corp_status != '99' 
+                AND RC.corp_status != '00'
+                AND PC.corp_status != '00'
+                AND RC.is_direct = 'Y'
+                <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                    AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+                </if>
+                <if test="areacode_view !=null and areacode_view !=''">
+                    AND RC.area_code = #{areacode_view}
+                </if>
+        ORDER BY layout_pid DESC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+        
+    </select>
+    
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+    <update id="update_by_pk" parameterType="Map">
+        UPDATE  dir_layout 
+           SET  mod_mem_pid                 = #{reg_mem_pid}
+                , mod_dtime                 = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                <choose>
+                    <when test="logo_img_url_del != null and logo_img_url_del !=''">
+                        , logo_img_url              = NULL
+                    </when>
+                    <otherwise>
+                        , logo_img_url              = #{logo_img_url}
+                    </otherwise>
+                </choose>
+                
+                , naver_site_verification   = #{naver_site_verification}
+                , google_site_verification  = #{google_site_verification}
+                
+                , main_title                = #{main_title}
+                , sub_title                 = #{sub_title}
+                <choose>
+                    <when test="main_img_url_del != null and main_img_url_del !=''">
+                        , main_img_url              = NULL
+                    </when>
+                    <otherwise>
+                        , main_img_url              = #{main_img_url}
+                    </otherwise>
+                </choose>
+                , skin_type                 = #{skin_type}
+                , layout_type               = #{layout_type}
+                , rent_guide                = #{rent_guide}
+        WHERE
+                layout_pid                  = #{layoutPid}
+    </update>
+</mapper>

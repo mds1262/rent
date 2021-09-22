@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.RcorderDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	rentcar_order_master 
+		   SET	code_div	= #{code_div}		,
+				code_key	= #{code_key}		,
+				code_value	= #{code_value}		,
+				code_status	= #{code_status}	,
+				mod_mem_pid	= #{mod_mem_pid}	,
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	code_pid = #{code_pid}		
+	</update>
+	
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT	*
+		  FROM 	rentcar_order_master 
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	ST.rcorder_pid,
+				MM.mem_id,
+				MM.mem_pid,
+			    MM.mem_name,
+			    MM.mem_phone,
+			    MM.mem_birth,
+			    
+			    ST.booking_number,
+			    ST.member_name,
+			    ST.member_tel,
+			    ST.driver_name,
+			    ST.driver_tel,
+			    MM.mem_email,
+			    ST.booking_hours,
+			    ST.booking_sdtime,
+			    ST.booking_edtime,
+			    ST.driver_birth,
+			    
+			    ST.mem_referer,
+			    ST.order_step,
+			    ST.pg_price,
+			    ST.pg_name,
+			    ST.pg_method,
+			    ST.price_standard,
+			    ST.price_dc_rate,
+			    ST.extracharge_rate,
+			    ST.price_dc_point,
+                ST.price_sale_zimcar,
+                ST.price_sale,
+			    ST.pg_vbank_num,
+			    ST.pg_vbank_name,
+			    ST.pg_req_dtime,
+			    ST.pg_res_dtime,
+			    ST.price_dc_point,
+                ST.mem_coupon_pid,
+                ST.price_dc_coupon,
+                ST.price_insu_sale,
+			    (select code_value from common_code where code_key = ST.insu_code) insu_code,
+			    
+			    ST.order_refund_step,
+			    ST.order_refund_type,
+				ST.order_refund_fee,
+				ST.order_refund_sett_price,
+				ST.order_refund_price, 
+				ST.order_refund_bank,
+				ST.order_refund_accno,
+				ST.order_refund_reqdtime,
+				ST.order_refund_resdtime,
+				ST.order_refund_message,
+				ST.order_refund_sms,
+				
+				ST.order_cancel_step,
+				ST.order_cancel_reqdtime,
+				ST.order_cancel_resdtime,
+				
+                ST.price_consign_rent,
+                ST.consign_addr_rent,
+                ST.price_consign_return,
+                ST.consign_addr_return,
+                ST.price_consign_sum,
+                ST.consign_type,
+			    
+			    PC.corp_public_name,
+			    PC.corp_code, 
+			    RMM.model_name,
+			    RMM.model_code,
+			    (select code_value from common_code where code_key = RMM.class_code) class_code,
+			    (select code_value from common_code where code_key = RMM.gear_code) gear_code,
+			    (select code_value from common_code where code_key = RMM.maker_code) maker_code,
+			    (select code_value from common_code where code_key = RMM.fuel_code) fuel_code,
+			    RMM.engine_cc,
+			    RMM.seater_count,
+			    (SELECT area_code FROM rentcar_corp WHERE ST.rccorp_pid = rentcar_corp.rccorp_pid) AS area_code
+		  FROM	rentcar_order_master ST, member_master MM, provider_corp PC, rentcar_model_master RMM 
+		 WHERE	ST.rcorder_pid = #{rcorder_pid}
+		   AND	ST.provider_pid = PC.provider_pid
+		   AND	ST.mem_pid = MM.mem_pid
+		   AND	ST.rcmodel_pid = RMM.rcmodel_pid
+	  order by	ST.rcorder_pid DESC
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		SELECT    
+		          SQL_CALC_FOUND_ROWS
+		          RESULT.*
+		  FROM    (SELECT 
+                          ST.rcorder_pid,
+			              ST.pg_order_id,
+			              ST.mem_pid,
+			              ST.provider_pid,
+			              ST.rccorp_pid,
+			              ST.rcmodel_pid,
+			              ST.booking_number,
+			              ST.booking_sdtime,
+			              ST.booking_edtime,
+			              ST.booking_hours,
+			              ST.booking_days,
+			              ST.erp_pid,
+						  ST.erp_booking_number,
+						  ST.erp_client_cd,
+						  ST.erp_model_code,
+						  ST.member_name,
+						  ST.member_tel,
+						  ME.mem_type,
+						  ST.order_message,
+						  ST.price_standard,
+						  ST.price_dc_rate,
+						  ST.price_sale,
+						  ST.price_dc_point,
+						  ST.mem_coupon_pid,
+						  ST.price_dc_coupon,
+						  ST.price_dc_final,
+						  ST.insu_code,
+						  ST.erp_insu_code,
+						  ST.price_insu_standard,
+						  ST.price_insu_sale,
+						  ST.driver_name,
+						  ST.driver_tel,
+						  ST.driver_birth,
+						  ST.driver_license_code,
+						  ST.isblock_booking,
+						  ST.mem_referer,
+						  ST.mem_ip_addr,
+						  ST.mem_device,
+						  ST.order_step,
+						  ST.order_status,
+						  ST.mem_card_pid,
+						  ST.pg_price,
+						  ST.pg_name,
+						  ST.pg_method,
+						  ST.pg_req_dtime,
+						  ST.pg_vbank_num,
+						  ST.pg_vbank_name,
+						  ST.pg_vbank_holder,
+						  ST.pg_vbank_date,
+						  ST.pg_res_certify_code,
+						  ST.pg_res_code,
+						  ST.pg_res_message,
+						  ST.pg_res_tid,
+						  ST.pg_res_authnum,
+						  ST.pg_res_dtime,
+						  ST.pg_card_name,
+						  ST.pg_card_number,
+						  ST.pg_card_expire_date,
+						  ST.pg_card_session_key,
+						  ST.order_cancel_step,
+						  ST.order_cancel_reqdtime,
+						  ST.order_cancel_resdtime,
+						  ST.order_cancel_message,
+						  ST.order_cancel_res,
+						  ST.order_refund_step,
+						  ST.order_refund_type,
+						  ST.order_refund_reqdtime,
+						  ST.order_refund_fee,
+						  ST.order_refund_sett_price,
+						  ST.order_refund_accno,
+						  ST.order_refund_bank,
+						  ST.order_refund_price,
+						  ST.order_refund_resdtime,
+						  ST.order_refund_message,
+						  ST.order_refund_mem_pid,
+						  ST.price_consign_rent,
+						  ST.consign_addr_rent,
+						  ST.price_consign_return,
+						  ST.consign_addr_return,
+						  ST.price_consign_sum,
+						  ST.consign_type,
+						  ST.reg_mem_pid,
+						  ST.mod_mem_pid,
+						  ST.reg_dtime,
+						  ST.mod_dtime,
+						  ST.extracharge_rate,
+						  ST.is_direct,
+			              ST.price_sale_zimcar,
+			              PC.corp_name,
+						  PC.corp_public_name,
+						  MM.model_name,
+						  CC.code_value,
+						  IF((ST.bundling_pid IS NULL OR 1 > ST.bundling_pid), 'N','Y') AS is_bundling
+				 FROM     rentcar_order_master ST, provider_corp PC, rentcar_model_master MM, common_code CC, member_master ME, rentcar_corp RC
+				 WHERE	  ST.provider_pid = PC.provider_pid
+					   AND	ST.rcmodel_pid = MM.rcmodel_pid
+					   AND  RC.rccorp_pid = ST.rccorp_pid
+					   AND	ST.insu_code = CC.code_key
+					   AND  ST.mem_pid = ME.mem_pid
+						
+					<if test="booking_type!=null">
+						AND ST.order_step = #{booking_type}
+					</if>
+					<if test="refund_type!=null">
+						AND ST.order_refund_step = #{refund_type}
+					</if>
+					<if test="cancel_type!=null">
+						AND ST.order_cancel_step = #{cancel_type}
+					</if>
+					<if test="search_type!=null">
+						AND ${search_type} like '%${search_value}%'
+					</if>
+					<if test="refund_sdate!=null">
+						AND (ST.order_refund_reqdtime between '${refund_sdate}000000' and '${refund_edate}235959'
+							 or ST.order_refund_resdtime between '${refund_sdate}000000' and '${refund_edate}235959')
+					</if>
+					<if test="pg_req_sdate!=null">
+						AND ST.pg_req_dtime between '${pg_req_sdate}000000' and '${pg_req_edate}235959'
+					</if>
+					<if test="order_sdate!=null">
+						AND (ST.booking_sdtime between '${order_sdate}000000' and '${order_edate}235959'
+							or ST.booking_edtime between '${order_sdate}000000' and '${order_edate}235959')
+					</if>
+					<if test="search_sdate!=null">
+						AND ST.pg_res_dtime between '${search_sdate}000000' and '${search_edate}235959'
+					</if>
+					<if test="cancel_sdate!=null">
+						AND ST.order_cancel_resdtime between '${cancel_sdate}000000' and '${cancel_edate}235959'
+					</if>
+					<if test="is_direct_view != null">
+                        AND ST.is_direct = #{is_direct_view}
+                    </if>
+                    <if test="areacode_view !=null and areacode_view !=''">
+		                AND RC.area_code = #{areacode_view}
+		            </if> 
+		            <if test="consign_type_view !=null and consign_type_view !=''">
+		                <choose>
+		                    <when test="consign_type_view == '-1'">
+		                        AND ST.consign_type = null      
+		                    </when>
+		                    <otherwise>
+		                        AND ST.consign_type = #{consign_type_view}
+		                    </otherwise>
+		                </choose>
+                        
+                    </if>
+                    <if test="is_member_view != null">
+                        <choose>
+                            <when test='is_member_view eq "Y"'>
+                                AND ME.mem_type != '01' 
+                            </when>
+                            <otherwise>
+                                AND ME.mem_type = '01'
+                            </otherwise>
+                        </choose>
+                        
+                    </if>
+		
+        ) AS RESULT
+        
+        <if test="is_bundling !=null">
+            WHERE RESULT.is_bundling = #{is_bundling}
+        </if>
+		ORDER BY RESULT.rcorder_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+
+	<update id="update_requestRcorder" parameterType="Map">
+		UPDATE	rentcar_order_master 
+		   SET	order_refund_step		= '01',
+		   		order_refund_reqdtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	rcorder_pid = #{rcorder_pid}		
+	</update>
+	<select id="select_found_reqdtime" parameterType="Map" resultType="String">
+		SELECT	order_refund_reqdtime
+		  FROM	rentcar_order_master
+		 WHERE	rcorder_pid = #{rcorder_pid}
+	</select>
+	
+	<select id="selectRcOrder" parameterType="Map" resultType="rm">
+		/* selectRcOrder */
+		SELECT  ST.rcorder_pid,
+				ST.rccorp_pid,
+				ST.mem_id,
+				ST.mem_pid,
+				ST.mem_name,
+				ST.mem_phone,
+				ST.mem_birth,
+				ST.booking_number,
+				ST.member_name,
+				ST.member_tel,
+				ST.driver_name,
+				ST.driver_tel,
+				ST.mem_email,
+				ST.booking_hours,
+				ST.booking_sdtime,
+				ST.booking_edtime,
+				ST.driver_birth,
+				ST.mem_referer,
+				ST.order_step,
+				ST.pg_price,
+				ST.pg_name,
+				ST.pg_method,
+				ST.price_standard,
+				ST.price_dc_rate,
+				ST.extracharge_rate,
+				ST.price_dc_point,
+				ST.price_sale_zimcar,
+				ST.price_sale,
+				ST.pg_vbank_num,
+				ST.pg_vbank_name,
+				ST.pg_req_dtime,
+				ST.pg_res_dtime,
+				ST.pg_card_name,
+				ST.mem_coupon_pid,
+				ST.price_dc_coupon,
+				ST.price_insu_sale,
+				ST.insu_code,
+				ST.order_refund_step,
+				ST.order_refund_type,
+				ST.order_refund_fee,
+				ST.order_refund_sett_price,
+				ST.order_refund_price, 
+				ST.order_refund_bank,
+				ST.order_refund_accno,
+				ST.order_refund_reqdtime,
+				ST.order_refund_resdtime,
+				ST.order_refund_message,
+				ST.order_refund_sms,
+				ST.order_cancel_step,
+				ST.order_cancel_reqdtime,
+				ST.order_cancel_resdtime,
+				
+				ST.price_consign_rent,
+                ST.consign_addr_rent,
+                ST.price_consign_return,
+                ST.consign_addr_return,
+                ST.price_consign_sum,
+                ST.consign_type,
+                
+				ST.corp_public_name,
+				ST.corp_code, 
+				ST.model_name,
+				ST.model_code,
+				ST.class_code,
+				ST.gear_code,
+				ST.maker_code,
+				ST.fuel_code,
+				ST.engine_cc,
+				ST.seater_count,
+				ST.is_direct,
+			    MC.memcoupon_pid,
+			    IFNULL(MC.coupon_name ,'N') AS coupon_name,
+			    ST.is_bundling,
+                BS.bunding_edtime,
+                BS.bunding_sdtime,
+                ST.area_code,
+                (SELECT RMMM.model_name FROM rentcar_model_master as RMMM WHERE RMMM.rcmodel_pid = BS.rcmodel_pid) AS bunding_car_name
+		FROM (
+			SELECT	
+			        
+			        ST.rcorder_pid,
+			        ST.rccorp_pid,
+					MM.mem_id,
+					MM.mem_pid,
+					MM.mem_name,
+					MM.mem_phone,
+					MM.mem_birth,
+					ST.booking_number,
+					ST.member_name,
+					ST.member_tel,
+					ST.driver_name,
+					ST.driver_tel,
+					MM.mem_email,
+					ST.booking_hours,
+					ST.booking_sdtime,
+					ST.booking_edtime,
+					ST.driver_birth,
+					ST.mem_referer,
+					ST.order_step,
+					ST.pg_price,
+					ST.pg_name,
+					ST.pg_method,
+					ST.price_standard,
+					ST.price_dc_rate,
+					ST.extracharge_rate,
+					ST.price_dc_point,
+					ST.price_sale_zimcar,
+					ST.price_sale,
+					ST.pg_vbank_num,
+					ST.pg_vbank_name,
+					ST.pg_req_dtime,
+					ST.pg_res_dtime,
+					ST.pg_card_name,
+					ST.mem_coupon_pid,
+					ST.price_dc_coupon,
+					ST.price_insu_sale,
+					(select code_value from common_code where code_key = ST.insu_code) insu_code,
+					
+					ST.price_consign_rent,
+	                ST.consign_addr_rent,
+	                ST.price_consign_return,
+	                ST.consign_addr_return,
+	                ST.price_consign_sum,
+	                ST.consign_type,
+                
+					ST.order_refund_step,
+					ST.order_refund_type,
+					ST.order_refund_fee,
+					ST.order_refund_sett_price,
+					ST.order_refund_price, 
+					ST.order_refund_bank,
+					ST.order_refund_accno,
+					ST.order_refund_reqdtime,
+					ST.order_refund_resdtime,
+					ST.order_refund_message,
+					ST.order_refund_sms,
+					ST.order_cancel_step,
+					ST.order_cancel_reqdtime,
+					ST.order_cancel_resdtime,
+					PC.corp_public_name,
+					PC.corp_code, 
+					ST.is_direct,
+					RMM.model_name,
+					RMM.model_code,
+					(SELECT code_value FROM common_code WHERE code_key = RMM.class_code) class_code,
+					(SELECT code_value FROM common_code WHERE code_key = RMM.gear_code) gear_code,
+					(SELECT code_value FROM common_code WHERE code_key = RMM.maker_code) maker_code,
+					(SELECT code_value FROM common_code WHERE code_key = RMM.fuel_code) fuel_code,
+					RMM.engine_cc,
+					RMM.seater_count,
+					ST.bundling_pid,
+					(SELECT area_code FROM rentcar_corp WHERE rentcar_corp.rccorp_pid = ST.rccorp_pid) AS area_code,
+					IF((ST.bundling_pid IS NULL OR 1 > ST.bundling_pid), 'N','Y') AS is_bundling
+			  FROM	rentcar_order_master ST,member_master MM, provider_corp PC, rentcar_model_master RMM
+				WHERE	ST.rcorder_pid = #{rcorder_pid}
+				AND	ST.provider_pid = PC.provider_pid
+			    AND	ST.mem_pid = MM.mem_pid
+			    AND	ST.rcmodel_pid = RMM.rcmodel_pid
+		) ST LEFT OUTER JOIN (
+								SELECT CM.coupon_name, ST.mem_pid, ST.memcoupon_pid
+									FROM member_coupon ST, coupon_master CM 
+								WHERE ST.coupon_pid = CM.coupon_pid 
+		                            AND ST.mem_pid = #{mem_pid}
+							 ) MC 
+		ON ST.mem_coupon_pid = MC.memcoupon_pid
+		LEFT JOIN bundling_schedule AS BS
+        ON BS.bundling_pid = ST.bundling_pid
+	</select>
+	
+	<!-- 사용자 복구 포인트 관리자용 -->
+	<select id="selectMemPoint" parameterType="Map" resultType="Map">
+		SELECT ifnull(price_dc_point, 0) AS price_dc_point 
+			FROM rentcar_order_master 
+		WHERE rcorder_pid = ${rcorderPid}
+	</select>
+	
+	<!-- 사용자 복구 포인트 CronTab -->
+	<select id="selectOrderMaster" parameterType="Map" resultType="rm">
+		SELECT 
+			rcorder_pid, 
+			mem_pid, 
+			provider_pid, 
+			rccorp_pid, 
+			rcmodel_pid, 
+			mem_coupon_pid, 
+			ifnull(price_dc_point, 0) AS price_dc_point
+		FROM rentcar_order_master 
+		WHERE reg_dtime >= #{date}
+		AND order_step BETWEEN '00' AND '01' 
+	</select>
+	
+	<update id="updateMemOrder">
+		UPDATE rentcar_order_master
+			SET price_dc_point =  0, 
+				mem_coupon_pid =  0, 
+		    	price_dc_coupon = 0,
+		    	mod_mem_pid = ${modMemPid},
+		    	mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE rcorder_pid = ${rcorderPid}
+	</update>
+	
+	<update id="updateMemCoupon">
+		UPDATE member_coupon
+			SET coupon_status =  0, 
+		    	mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE memcoupon_pid = ${memCouponPid}
+	</update>
+	
+	<insert id="updateMemPoint">
+		UPDATE member_master
+			SET mem_point = mem_point+#{rePoint},
+				mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE mem_pid = ${memPid}
+	</insert>
+	
+	<update id="updatePointHistory">
+		UPDATE member_point_history
+			SET point_inout_type = 1, 
+				point_amount = ${rePoint},
+				point_detail = '예약 미진행 포인트 복원',
+				mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE rcorder_pid = ${rcorderPid}
+	</update>
+	
+</mapper>

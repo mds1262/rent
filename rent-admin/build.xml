@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="nm.zzimcar.admin">
+    <property environment="env"/>
+    <property name="debuglevel" value="lines,vars"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
+	<property name="web.dir" value="WebContent"/>
+	<property name="build.dir" value="${web.dir}/WEB-INF/classes"/>
+	<property name="tomcat_home.dir" value="/home/nature/admin/apache-tomcat-8.5.31"/>
+	
+	<path id="master-classpath">
+	        <fileset dir="${web.dir}/WEB-INF/lib">
+	            <include name="*.jar"/>
+	        </fileset>
+	        <pathelement path="${build.dir}"/>
+	    </path>
+		
+		<path id="tomcat-classpath">
+	        <fileset dir="${tomcat_home.dir}/lib">
+	            <include name="*.jar"/>
+	        </fileset>
+	        <pathelement path="${build.dir}"/>
+	    </path>
+	
+    <path id="nm.zzimcar.admin.classpath">
+        <pathelement location="build/classes"/>
+    	<path refid="master-classpath"/>
+    	<path refid="tomcat-classpath"/>
+    </path>
+	
+	<target name="init">
+	    <mkdir dir="build/classes"/>
+	    <copy includeemptydirs="false" todir="WebContent/WEB-INF/classes/com/zzimcar/admin/">
+	        <fileset dir="src/com/zzimcar/admin/">
+	            <exclude name="**/*.java"/>
+	        </fileset>
+	    </copy>
+		<copy includeemptydirs="false" todir="WebContent/WEB-INF/classes/">
+	        <fileset dir="src">
+	            <exclude name="**/*.java"/>
+	        </fileset>
+	    </copy>
+	</target>
+	
+    <target name="clean">
+        <delete dir="build/classes"/>
+    </target>
+	
+    <target depends="clean" name="cleanall"/>
+    
+	<target depends="build-project" name="build">
+	  <war destfile="ROOT.war" webxml="${web.dir}/WEB-INF/web.xml">
+	    <fileset dir="WebContent"/>
+	  </war>
+	</target>
+    
+	<target depends="init" name="build-project">
+	    <echo message="${ant.project.name}: ${ant.file}"/>
+	    <javac debug="true" debuglevel="${debuglevel}" destdir="WebContent/WEB-INF/classes" includeantruntime="false" source="${source}" target="${target}">
+	    	<src path="src/"/>
+	        <classpath refid="nm.zzimcar.admin.classpath"/>
+	    </javac>
+	</target>
+</project>

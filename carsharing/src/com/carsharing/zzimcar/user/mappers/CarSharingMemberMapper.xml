@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CarsharingMemberMapper">
+
+	<!-- 유저정보 및 정보 로그인 체크 -->	
+	<select id="allMemberInfo" parameterType="Map" resultType="rm">
+		SELECT  mem_pid,
+			    cc_pid,
+			    mem_id,
+			    mem_pw,
+			    mem_name,
+			    mem_birth,
+			    mem_email,
+			    mem_phone,
+			    mem_type,
+			    mem_token,
+			    mem_refresh_token,
+			    mem_expire_in,
+			    last_login_dtime,
+			    mem_status,
+			    reg_mem_pid,
+			    mod_mem_pid,
+			    reg_dtime,
+			    mod_dtime
+		FROM 	member_master
+		WHERE 	1=1 
+			<if test="memId != '' and memId != null">
+			AND	mem_id = #{memId}
+			</if>
+			<if test="pwCheckUse == 'OK'">
+			AND  mem_pw = #{memPw}
+			</if>
+			<if test="memPid != '' and memPid != null">
+			AND  mem_pid = #{memPid}
+			</if>
+			<if test="ccPid != '' and ccPid != null">
+			AND  cc_pid = #{ccPid}
+			</if>
+		
+	</select>
+
+	<update id="updateToken" parameterType="Map">
+		UPDATE member_master 
+			SET mem_token = #{token},
+				 	mem_refresh_token = #{refreshToken},
+				 	mem_expire_in = #{expireIn},
+				 	mod_mem_pid = #{memPid},
+			        mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE mem_pid = #{memPid}
+	</update>
+
+</mapper>

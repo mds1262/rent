@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.user.dao.CommonCodeDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<insert id="insert_base" parameterType="Map">
+		INSERT INTO common_code 
+		(
+			code_div	, code_key		, code_value	, code_sort_no, code_status	,
+			reg_mem_pid	, mod_mem_pid	, 
+			reg_dtime	, mod_dtime
+		) VALUES ( 
+			#{code_div}		, #{code_key}	, #{code_value} , #{code_sort_no}, #{code_status} ,
+			#{reg_mem_pid}	, #{mod_mem_pid} ,
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+		)
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="code_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	common_code 
+		   SET	code_div	= #{code_div}
+				code_key	= #{code_key}
+				code_value	= #{code_value}
+				code_sort_no= #{code_sort_no}
+				code_status	= #{code_status}
+				mod_mem_pid	= #{mod_mem_pid}
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	code_pid = #{code_pid}		
+	</update>
+	
+	<delete id="delete_by_pk" parameterType="int">
+		DELETE	FROM common_code 
+		 WHERE	code_pid = #{code_pid}		
+	</delete>
+		
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT	code_pid	,
+				code_div	,
+				code_key	,
+				code_value	,
+				code_sort_no,
+				code_status	,
+				reg_mem_pid	,
+				mod_mem_pid	,
+				reg_dtime	,
+				mod_dtime
+		  FROM 	common_code 
+		 WHERE  code_status = "1"
+	  ORDER BY  code_div ASC, code_pid DESC 
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	code_pid	,
+				code_div	,
+				code_key	,
+				code_value	,
+				code_sort_no,
+				code_status	,
+				reg_mem_pid	,
+				mod_mem_pid	,
+				reg_dtime	,
+				mod_dtime
+		  FROM 	common_code 
+		 WHERE	code_pid = #{code_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+
+
+
+
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		SELECT	SQL_CALC_FOUND_ROWS
+				code_pid	,
+				code_div	,
+				code_key	,
+				code_value	,
+				code_sort_no,
+				code_status	,
+				reg_mem_pid	,
+				mod_mem_pid	,
+				reg_dtime	,
+				mod_dtime
+		  FROM 	common_code 
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+
+ 	<!-- 공통코드 그룹화 한 SELECT -->
+	<select id="getModelCodeGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_CLASS_CODE'
+		GROUP BY code_key,code_value
+	</select>
+	
+	<select id="getModelGearGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_GEAR_CODE'
+		GROUP BY code_key,code_value
+	</select>
+	
+	<select id="getModelMakerGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_MAKER_CODE'
+		GROUP BY code_key,code_value
+	</select>	
+	
+	<select id="getModelFuelGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_FUEL_CODE'
+		GROUP BY code_key,code_value
+		ORDER BY code_pid DESC
+	</select>	
+	
+	<select id="getModelCarrierGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_CARRIER_CODE'
+		GROUP BY code_key,code_value
+		ORDER BY code_key DESC
+	</select>	
+	
+	<select id="getLicenseCodeGroup" resultType="rm">
+		SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'CAR_LICENSE_CODE'
+		GROUP BY code_key,code_value
+	</select>	
+	
+	<select id="getRcModelMasterAllInfo" parameterType="Map"  resultType="rm">
+        SELECT  
+        		rcmodel_pid,
+        		rccorp_pid,
+        		model_name,
+                nmmodel_pid,
+                model_code ,
+                is_bundling         
+          FROM  rentcar_model_master
+          WHERE  model_status !=9
+    </select>
+    
+    <select id="getBankInfo" resultType="rm">
+    	SELECT 
+			code_key,
+			code_value
+		FROM common_code
+		WHERE code_div = 'BACK_CODE'
+		GROUP BY code_key,code_value
+		ORDER BY code_key DESC
+    </select>
+			
+</mapper>

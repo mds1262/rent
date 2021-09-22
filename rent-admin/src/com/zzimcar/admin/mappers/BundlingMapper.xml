@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.BundlingDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<insert id="insert_base" parameterType="Map">
+		INSERT INTO bundling_pid 
+		(
+			rccorp_pid	, rcmodel_pid		, rccar_pid	, bunding_sdtime, bunding_edtime	,
+			bunding_hours	, bunding_days	, bunding_status, mem_pid
+			reg_dtime
+		) VALUES ( 
+			#{rccorp_pid}     , #{rcmodel_pid}      , #{rccar_pid}		, #{bunding_sdtime}	, #{bunding_edtime} , #{bunding_hours}, #{bunding_days} ,
+			#{bunding_status}	, #{mem_pid} , DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+		)
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="code_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	bundling_pid 
+		   SET	mod_mem_pid	= #{mod_mem_pid}	,
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	bundling_pid = #{bundling_pid}		
+	</update>
+	
+	<delete id="delete_by_pk" parameterType="int">
+		DELETE	FROM bundling_schedule 
+		 WHERE	bundling_pid = #{bundling_pid}		
+	</delete>
+		
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT  bundling_pid    ,
+                bunding_sdtime  ,
+                bunding_edtime  ,
+                bunding_hours   ,
+                bunding_days    ,
+                bunding_status  ,
+                mem_pid         ,
+                rccorp_pid      ,
+                rcmodel_pid     ,
+                rccar_pid       ,
+          FROM  bundling_schedule 
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	bundling_pid	,
+				bunding_sdtime	,
+				bunding_edtime	,
+				bunding_hours	,
+				bunding_days    ,
+				bunding_status  ,
+				mem_pid         ,
+				rccorp_pid      ,
+				rcmodel_pid     ,
+				rccar_pid       ,
+		  FROM 	bundling_schedule 
+		 WHERE	bundling_pid = #{bundling_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+
+	<select id="select_page" parameterType="Map"  resultType="rm">
+		
+		SELECT    SQL_CALC_FOUND_ROWS
+		          RESULT.*
+		  FROM   (SELECT BS.bundling_pid    ,
+                        (SELECT MM.mem_name FROM member_master as MM WHERE MM.mem_pid = BS.mem_pid) as mem_name,
+                        IFNULL(ROM.booking_number, "-") AS booking_number,
+                        ROM.rcorder_pid,
+                        (SELECT PC.corp_public_name FROM provider_corp AS PC WHERE PC.provider_pid = RC.provider_pid) AS corp_public_name,
+                        (SELECT RMM.model_name from rentcar_model_master AS RMM WHERE RMM.rcmodel_pid = BS.rcmodel_pid) AS car_name,
+                        BS.bunding_sdtime,
+                        BS.bunding_edtime,
+                        BS.bunding_hours,
+                        BS.bunding_days,
+                        BS.bunding_status,
+                        BS.reg_dtime,
+                        RC.area_code
+                 FROM   bundling_schedule AS BS
+             LEFT JOIN  rentcar_order_master AS ROM
+                    ON  BS.bundling_pid = ROM.bundling_pid
+                  JOIN  rentcar_corp AS RC 
+                    ON  BS.rccorp_pid = RC.rccorp_pid 
+		         WHERE  BS.bunding_status != '9'
+		         <if test="comStatusType != null and comStatusType != ''">
+                    AND BS.bunding_status = #{comStatusType}
+                 </if>
+		         <if test="search_sdate !=null and search_sdate != '' and search_edate !=null and search_edate != '' and searchDateType != null and searchDateType != ''">
+                    AND (${searchDateType} BETWEEN '${search_sdate}000000' AND '${search_edate}235959')
+                </if>
+		         ) AS RESULT
+		WHERE   <choose>
+                    <when test="scValue != null and scValue !='' and scType != null and scType !=''">
+                        UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+                    </when>
+                    <otherwise>
+                        (1)
+                    </otherwise>
+                </choose>
+                <if test="areacode_view !=null and areacode_view !=''">
+                    AND RESULT.area_code = #{areacode_view}
+                </if> 
+		ORDER BY RESULT.bundling_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+		
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+</mapper>

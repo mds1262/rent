@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.SNCDao">
+    <!-- ## //.제조사  Query ######################################## -->
+    <insert id="insert_maker" parameterType="Map">
+        INSERT INTO car_maker 
+        (
+            maker_name, reg_mem_pid, mod_mem_pid,
+            reg_dtime, mod_dtime
+        ) VALUES ( 
+            #{maker_name}, #{mem_pid}, #{mem_pid},
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+        )
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="maker_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <update id="delete_maker_by_pk" parameterType="Map">
+        UPDATE  car_maker 
+           SET  maker_status    = '9',
+                mod_mem_pid     = #{mem_pid},
+                mod_dtime       = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  maker_pid       = #{maker_pid}      
+    </update>
+    
+    <select id="select_maker_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                maker_pid   ,
+                maker_name  ,
+                maker_status,
+                reg_mem_pid ,
+                mod_mem_pid ,
+                reg_dtime   ,
+                mod_dtime
+          FROM  car_maker
+         WHERE  maker_status != '9'
+       ORDER BY maker_pid ASC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+    <!-- ## //.공동구매 차량 Query ######################################## -->
+    <insert id="insert_sncModel" parameterType="Map">
+        INSERT INTO snc_car_model 
+        (
+            maker_pid, snc_car_name, snc_car_img_url, reg_mem_pid, mod_mem_pid,
+            reg_dtime, mod_dtime
+        ) VALUES ( 
+            #{maker_pid}, #{snc_car_name}, #{snc_car_img_url}, #{mem_pid}, #{mem_pid},
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+        )
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="snc_car_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <update id="delete_sncModel_by_pk" parameterType="Map">
+        UPDATE  snc_car_model 
+           SET  snc_status  = '9',
+                mod_mem_pid     = #{mem_pid},
+                mod_dtime       = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  snc_car_pid     = #{snc_car_pid}        
+    </update>
+    
+    <select id="select_sncmodel_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                snc_car_pid     ,
+                maker_pid       ,
+                snc_car_name    ,
+                snc_car_img_url ,
+                snc_status      ,
+                reg_mem_pid     ,
+                mod_mem_pid     ,
+                reg_dtime       ,
+                mod_dtime
+          FROM  snc_car_model
+         WHERE  snc_status != '9'
+           AND  maker_pid = #{maker_pid}
+       ORDER BY snc_car_pid ASC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+    
+    <!-- ## //.공동구매  트림 Query ######################################## -->
+    <insert id="insert_sncTrim" parameterType="Map">
+        INSERT INTO snc_trim 
+        (
+            snc_car_pid, snc_trim_name, snc_trim_price, reg_mem_pid, mod_mem_pid,
+            reg_dtime, mod_dtime
+        ) VALUES ( 
+            #{snc_car_pid}, #{snc_trim_name}, #{snc_trim_price}, #{mem_pid}, #{mem_pid},
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+        )
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="snc_trim_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <update id="delete_sncTrim_by_pk" parameterType="Map">
+        UPDATE  snc_trim 
+           SET  snc_trim_status = '9',
+                mod_mem_pid     = #{mem_pid},
+                mod_dtime       = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  snc_trim_pid    = #{snc_trim_pid}       
+    </update>
+    
+    <select id="select_sncTrim_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                snc_trim_pid    ,
+                snc_car_pid     ,
+                snc_trim_name   ,
+                snc_trim_price  ,
+                snc_trim_status ,
+                reg_mem_pid     ,
+                mod_mem_pid     ,
+                reg_dtime       ,
+                mod_dtime
+          FROM  snc_trim
+         WHERE  snc_trim_status != '9'
+           AND  snc_car_pid = #{snc_car_pid}
+       ORDER BY snc_trim_pid ASC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+    
+    <!-- ## //.공동구매 차량 컬러,옵션 Query ######################################## -->
+    <insert id="insert_sncOption" parameterType="Map">
+        INSERT INTO snc_car_option 
+        (
+            snc_trim_pid, snc_car_pid, snc_option_code, snc_option_name, snc_option_price, reg_mem_pid, mod_mem_pid,
+            reg_dtime, mod_dtime
+        ) VALUES ( 
+            #{snc_trim_pid}, #{snc_car_pid}, #{snc_option_code}, #{snc_option_name}, #{snc_option_price}, #{mem_pid}, #{mem_pid},
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+        )
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="snc_option_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <update id="delete_sncOption_by_pk" parameterType="Map">
+        UPDATE  snc_car_option 
+           SET  snc_option_status   = '9',
+                mod_mem_pid     = #{mem_pid},
+                mod_dtime       = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  snc_option_pid  = #{snc_option_pid}     
+    </update>
+    
+    <select id="select_sncOption_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                snc_option_pid      ,
+                snc_trim_pid        ,
+                snc_car_pid         ,
+                snc_option_code     ,
+                snc_option_name     ,
+                snc_option_price    ,
+                snc_option_status   ,
+                reg_mem_pid         ,
+                mod_mem_pid         ,
+                reg_dtime           ,
+                mod_dtime
+          FROM  snc_car_option
+         WHERE  snc_option_status != '9'
+           AND  snc_trim_pid = #{snc_trim_pid}
+           AND  snc_option_code = 'O'
+       ORDER BY snc_option_pid ASC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+    <select id="select_sncColor_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                snc_option_pid      ,
+                snc_trim_pid        ,
+                snc_car_pid         ,
+                snc_option_code     ,
+                snc_option_name     ,
+                snc_option_price    ,
+                snc_option_status   ,
+                reg_mem_pid         ,
+                mod_mem_pid         ,
+                reg_dtime           ,
+                mod_dtime
+          FROM  snc_car_option
+         WHERE  snc_option_status != '9'
+           AND  snc_trim_pid = #{snc_trim_pid}
+           AND  snc_option_code != 'O'
+       ORDER BY snc_option_pid ASC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+    
+    <!-- 외장 옵션 구하기 -->
+    <select id="select_external_by_pk" parameterType="Map"  resultType="rm">
+        SELECT  snc_option_pid      ,
+                snc_trim_pid        ,
+                snc_car_pid         ,
+                snc_option_code     ,
+                snc_option_name     ,
+                snc_option_price
+          FROM  snc_car_option
+         WHERE  snc_option_status != '9'    
+           AND  snc_car_pid = #{snc_car_pid}
+           AND  snc_option_code = 'E'
+      GROUP BY  snc_option_name,
+                snc_option_price
+      ORDER BY  snc_option_pid ASC
+    </select>
+    <!-- 내장 옵션 구하기 -->
+    <select id="select_interior_by_pk" parameterType="Map"  resultType="rm">
+        SELECT  snc_option_pid      ,
+                snc_trim_pid        ,
+                snc_car_pid         ,
+                snc_option_code     ,
+                snc_option_name     ,
+                snc_option_price
+          FROM  snc_car_option
+         WHERE  snc_option_status != '9'    
+           AND  snc_car_pid = #{snc_car_pid}
+           AND  snc_option_code = 'I'
+      GROUP BY  snc_option_name,
+                snc_option_price
+      ORDER BY  snc_option_pid ASC
+    </select>
+    <!-- 내장 옵션 구하기 -->
+    <select id="select_option_by_pk" parameterType="Map"  resultType="rm">
+        SELECT  snc_option_pid      ,
+                snc_trim_pid        ,
+                snc_car_pid         ,
+                snc_option_code     ,
+                snc_option_name     ,
+                snc_option_price
+          FROM  snc_car_option
+         WHERE  snc_option_status != '9'    
+           AND  snc_car_pid = #{snc_car_pid}
+           AND  snc_option_code = 'O'
+      GROUP BY  snc_option_name,
+                snc_option_price
+      ORDER BY  snc_option_pid ASC
+    </select>
+    
+    <!-- 컬러 수정하기 -->
+    <update id="update_carcolor_by_pk" parameterType="Map">
+        UPDATE  snc_car_option 
+           SET  snc_option_name = #{update_color},
+                snc_option_price= #{update_price},
+                mod_mem_pid     = #{mem_pid},
+                mod_dtime       = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  snc_car_pid     = #{snc_car_pid}
+           AND  snc_option_name = #{before_color}
+    </update>
+</mapper>

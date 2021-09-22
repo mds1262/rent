@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PVExculde">
+
+	<select id="getPVExculdeAll" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				RME.exclude_pid,
+				RME.rccorp_pid,
+				RME.rcmodel_pid,
+                date_format(RME.exclude_sdtime, '%Y-%m-%d %H:%i:%s')as exclude_sdtime,
+                date_format(RME.exclude_edtime, '%Y-%m-%d %H:%i:%s')as exclude_edtime,
+				RME.reg_mem_pid,
+				RME.mod_mem_pid,
+				date_format(RME.reg_dtime, '%Y-%m-%d %H:%i:%s')as reg_dtime,
+				str_to_date(RME.mod_dtime, '%Y-%m-%d')as mod_dtime,
+				RME.exclude_status,
+				PC.corp_name
+		FROM rentcar_model_exclude RME, rentcar_corp RC, provider_corp PC, rentcar_model_master ST
+		WHERE RME.exclude_status = 1
+		      AND RME.rccorp_pid = RC.rccorp_pid
+		      AND RC.provider_pid = PC.provider_pid
+		      AND RME.rcmodel_pid = ST.rcmodel_pid
+		      <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                 AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+             </if>
+			<if test="rccorpPid != null and rccorpPid != ''">
+				AND RME.rccorp_pid = #{rccorpPid}
+			</if>
+			<if test="rcmodelPidList != null and rcmodelPidList != ''">
+					AND	RME.rcmodel_pid IN
+				<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList.rcmodelPid}
+       			 </foreach>
+			</if>
+			<if test="excludeSdtime != null and excludeSdtime != '' and excludeEdtime != null and excludeEdtime != ''">
+				AND
+				(date_format(RME.exclude_sdtime, '%Y-%m-%d') between date_format(#{excludeSdtime}, '%Y-%m-%d') and date_format(#{excludeEdtime}, '%Y-%m-%d')
+				or date_format(RME.exclude_edtime, '%Y-%m-%d') between date_format(#{excludeSdtime}, '%Y-%m-%d') and date_format(#{excludeEdtime}, '%Y-%m-%d'))
+			</if>
+			<if test="excludeStatus != null and excludeStatus != ''">
+				AND RME.exclude_status = #{excludeStatus}
+			</if>		
+			<if test="areacode_view !=null and areacode_view !=''">
+	              AND RC.area_code = #{areacode_view}
+	           </if> 						
+		ORDER BY RME.exclude_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+		<if test="offset == null or row_count == null">
+			LIMIT 1, 10
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+	<!--  
+	<select id="getRcCopnNameModelGroup" resultType="rm" >
+		SELECT    
+			  ST.*, 
+			  RCM.*, 
+			  PC.*
+		FROM  rentcar_model_exclude ST, 
+        	  rentcar_model_master RCM,
+       		  rentcar_corp RC, 
+       		  provider_corp PC
+		WHERE ST.rccorp_pid = RC.rccorp_pid
+  		AND    RC.provider_pid = PC.provider_pid
+  		AND    ST.rcmodel_pid = RCM.rcmodel_pid
+	</select>
+	-->
+	<select id="getRcModelNameModelGroup" parameterType="Map" resultType="rm" >
+		SELECT 
+				rcmodel_pid,
+				model_name,
+				model_code,
+				is_bundling 
+		FROM  rentcar_model_master
+		WHERE  model_status != 9
+		<if test="rccorpPid != '' and rccorpPid != null">
+			AND rccorp_pid = #{rccorpPid}
+		</if>
+		<if test="rcmodelPidList != '' and rcmodelPidList != null ">
+			AND rcmodel_pid IN
+			<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           		#{pidList.rcmodelPid}
+       		</foreach>
+		</if>
+		ORDER BY model_name ASC
+	</select>
+	<select id="getSubExcludeModelPid" parameterType="Map" resultType="rm">
+		SELECT
+				rcmodel_pid,
+				model_name
+		FROM rentcar_model_master
+		WHERE model_name LIKE concat('%',#{nmmodelName},'%')
+					
+	</select>
+	
+	<select id="getProExcludeView" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				exclude_pid,
+				rccorp_pid,
+				rcmodel_pid,
+				str_to_date(exclude_sdtime, '%Y%m%d%H%i%s')as exclude_sdtime,
+                str_to_date(exclude_edtime, '%Y%m%d%H%i%s')as exclude_edtime,
+				reg_mem_pid,
+				mod_mem_pid,
+				str_to_date(reg_dtime, '%Y%m%d%H%i%s')as reg_dtime,
+				str_to_date(mod_dtime, '%Y%m%d%H%i%s')as mod_dtime,
+				exclude_status
+		FROM rentcar_model_exclude
+		WHERE exclude_pid = #{excludePid}
+	</select>
+	
+	<insert id="insertProExclude" parameterType="Map">
+		INSERT INTO rentcar_model_exclude
+					(
+					rccorp_pid,
+					rcmodel_pid,
+					exclude_sdtime,
+					exclude_edtime,
+					exclude_status,
+					reg_mem_pid,
+					mod_mem_pid,
+					reg_dtime,
+					mod_dtime
+					)
+					VALUES
+					(
+					#{rccorpPid},
+					#{rcmodelPid},
+					DATE_FORMAT(#{excludeSdtime}, '%Y%m%d%H%i%s'),
+					DATE_FORMAT(#{excludeEdtime}, '%Y%m%d%H%i%s'),
+					#{excludeStatus},
+					#{regMemPid},
+					#{regMemPid},
+					now() + 0,
+					now() + 0
+					)
+	</insert>
+	
+	<update id="updateProExclude" parameterType="Map">
+		UPDATE rentcar_model_exclude 
+				SET 
+				exclude_sdtime = DATE_FORMAT(#{excludeSdtime}, '%Y%m%d%H%i%s'),
+				exclude_edtime = DATE_FORMAT(#{excludeEdtime}, '%Y%m%d%H%i%s'),
+				exclude_status = #{excludeStatus},
+				mod_mem_pid = #{modMemPid},
+				mod_dtime = now() + 0
+		WHERE 	exclude_pid = #{excludePid}	
+				
+	</update>
+	
+	<delete id="deleteNmModel" parameterType="Map" >
+	
+	UPDATE rentcar_model_exclude SET 
+		 	exclude_status = '9'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				exclude_pid IN
+				<foreach collection="excludePidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			exclude_pid = #{excludePid}
+			</otherwise>
+		</choose>
+	</delete>
+	
+</mapper>

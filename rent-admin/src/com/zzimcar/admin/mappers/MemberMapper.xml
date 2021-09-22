@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.MemberDao">
+
+<!-- ## 필수 생성 Query ########################################### -->
+    <insert id="insert_base" parameterType="Map">
+        INSERT INTO member_master
+        (
+            mem_id          , mem_pwd           , mem_name          , mem_birth ,
+            mem_email       , mem_phone         , mem_isauth        , auth_num  ,
+            filter_car_type , filter_car_option , filter_car_eval   ,
+            device_type     , push_id           , mem_type          , mem_level ,
+            last_login_dtime,   reg_dtime       , mod_dtime
+        )
+        VALUES
+        (
+            {mem_id}            , {mem_pwd}             , {mem_name}        , {mem_birth}   ,
+            {mem_email}         , {mem_phone}           , {mem_isauth}      , {auth_num}    ,
+            {filter_car_type}   , {filter_car_option}   , {filter_car_eval} ,
+            {device_type}       , {push_id}             , {mem_type}        , {mem_level}   ,
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s")          ,
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s")          , 
+            DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+        )
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="code_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <update id="update_by_pk" parameterType="Map">
+        UPDATE  member_master
+           SET  mem_name            = #{mem_name}                           ,
+                mem_birth           = #{mem_birth}                          ,
+                mem_email           = #{mem_email}                          ,
+                mem_phone           = #{mem_phone}                          ,
+                mem_isauth          = #{mem_isauth}                         ,
+                filter_car_type     = #{filter_car_type}                    ,
+                filter_car_option   = #{filter_car_option}                  ,
+                filter_car_eval     = #{filter_car_eval}                    ,
+                filter_car_mk       = #{filter_car_mk}                      ,
+                filter_car_fuel     = #{filter_car_fuel}                    ,
+                filter_car_year     = #{filter_car_year}                    ,
+                filter_car_insu     = #{filter_car_insu}                    ,
+                mem_type            = #{mem_type}                           ,
+                mem_status          = #{mem_status}                         ,
+                mem_point           = #{mem_point}                          ,
+                mod_dtime           = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  mem_pid             = #{mem_pid}    
+    </update>
+    
+    <delete id="delete_by_pk" parameterType="int">
+        DELETE  FROM member_master 
+         WHERE  mem_pid = #{mem_pid}        
+    </delete>
+        
+    <select id="select_all" parameterType="Map"  resultType="rm">
+        SELECT  mem_pid             ,
+                mem_id              ,
+                mem_pwd             ,
+                mem_name            ,
+                mem_birth           ,
+                mem_email           ,
+                mem_phone           ,
+                mem_isauth          ,
+                auth_num            ,
+                filter_car_type     ,
+                filter_car_option   ,
+                filter_car_eval     ,
+                device_type         ,
+                push_id             ,
+                mem_type            ,
+                mem_level           ,
+                mem_status          ,
+                mem_point           ,
+                last_login_dtime    ,
+                reg_dtime           ,
+                mod_dtime
+          FROM  member_master
+    </select>
+    
+    <select id="select_by_pk" parameterType="int"  resultType="rm">
+        SELECT  mem_pid             ,
+                mem_id              ,
+                mem_pwd             ,
+                mem_name            ,
+                mem_birth           ,
+                mem_email           ,
+                mem_phone           ,
+                mem_isauth          ,
+                mem_signup_type     ,
+                auth_num            ,
+                filter_car_type     ,
+                filter_car_option   ,
+                filter_car_eval     ,
+                filter_car_mk       ,
+                filter_car_fuel     ,
+                filter_car_year     ,
+                filter_car_insu     ,
+                device_type         ,
+                push_id             ,
+                mem_type            ,
+                mem_level           ,
+                mem_status          ,
+                mem_point           ,
+                last_login_dtime    ,
+                reg_dtime           ,
+                mod_dtime
+          FROM  member_master 
+         WHERE  mem_pid = #{mem_pid}
+    </select>
+    <!-- ## //.필수 생성 Query ######################################## -->
+
+    <select id="select_page" parameterType="Map"  resultType="rm">
+        
+        SELECT  SQL_CALC_FOUND_ROWS
+                ST.mem_pid                                          ,
+                ST.mem_id                                           ,
+                ST.mem_pwd                                          ,
+                ST.mem_name                                     ,
+                ST.mem_birth                                        ,
+                ST.mem_email                                        ,
+                ST.mem_phone                                        ,
+            IF  (ST.mem_isauth = 'Y','인증','미인증') AS mem_isauth  ,
+                ST.auth_num                                     ,
+                ST.filter_car_type                                  ,
+                ST.filter_car_option                                ,
+                ST.filter_car_eval                                  ,
+                ST.device_type                                      ,
+                ST.push_id                                          ,
+                ST.mem_type                                     ,
+                ST.mem_level                                        ,
+                ST.mem_status                                       ,
+                ST.mem_point                                        ,
+                ST.last_login_dtime                             ,
+                ST.reg_dtime                                        ,
+                ST.mod_dtime                                        ,
+                (SELECT count(MC.memcoupon_pid) FROM member_coupon MC WHERE MC.mem_pid = ST.mem_pid) AS coupon_count
+          FROM  member_master ST 
+         WHERE  mem_status != '9'
+           AND  mem_type != '01'
+        <if test="status_type!=null">
+           AND  mem_status = #{status_type}
+        </if>
+        <if test="search_type!=null">
+           AND  ${search_type} like '%${search_value}%'
+        </if>
+        <if test="search_sdate!=null">
+           AND  reg_dtime between '${search_sdate}000000' and '${search_edate}235959'
+        </if>
+        ORDER BY mem_pid DESC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+        
+    </select>
+
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+    <select id="member_list_excel" parameterType="Map"  resultType="Map">
+        /* MemberMapper.xml - member_list_excel */
+        SELECT  mem_pid                                             ,
+                mem_id                                              ,
+                IFNULL(mem_name,' ')            AS mem_name         ,
+                IFNULL(mem_birth,' ')           AS mem_birth        ,
+                IFNULL(mem_email,' ')           AS mem_email        ,
+                IFNULL(mem_phone,' ')           AS mem_phone        ,
+                IFNULL(mem_isauth,'N')          AS mem_isauth       ,
+                IFNULL(filter_car_type,' ')     AS filter_car_type  ,
+                IFNULL(filter_car_option,' ')   AS filter_car_option,
+                IFNULL(filter_car_eval,'0')     AS filter_car_eval  ,
+                IFNULL(filter_car_mk,' ')       AS filter_car_mk    ,
+                IFNULL(filter_car_fuel,' ')     AS filter_car_fuel  ,
+                IFNULL(filter_car_year,' ')     AS filter_car_year  ,
+                IFNULL(filter_car_insu,' ')     AS filter_car_insu  ,
+                IFNULL(mem_type,' ')            AS mem_type         ,
+                IFNULL(mem_status,'1')          AS mem_status       ,
+                IFNULL(mem_point,'0')           AS mem_point        ,
+                last_login_dtime                                    ,
+                reg_dtime                                           ,
+                mod_dtime
+          FROM  member_master 
+         WHERE mem_type = '00'
+           AND mem_status = '1'
+         ORDER  BY mem_pid ASC 
+         LIMIT  #{offset}, #{noOfRecords} 
+    </select>
+    
+    <select id="write_get_count" resultType="int">
+        SELECT COUNT(*) 
+          FROM member_master
+         WHERE mem_type = '00'
+           AND mem_status = '1'
+    </select>
+
+
+
+    <select id="select_mycoupon_page" parameterType="Map"  resultType="rm">
+        /* MemberMapper.xml - select_mycoupons */
+        SELECT  SQL_CALC_FOUND_ROWS
+                ST.*,
+                CM.coupon_type, CM.coupon_name, CM.coupon_memo, CM.is_duplication, 
+                CM.create_total_count, CM.promotion_sdtime, CM.promotion_edtime, CM.use_sdtime, CM.use_edtime, 
+                CM.rccorp_pids, CM.price_min_limit, CM.discount_type, CM.discount_price 
+          FROM  member_coupon ST, coupon_master CM 
+         WHERE  ST.coupon_status != '9'
+           AND  ST.mem_pid = #{mem_pid }
+           AND  ST.coupon_pid = CM.coupon_pid
+        ORDER BY memcoupon_pid DESC
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+        
+    </select>
+
+</mapper>

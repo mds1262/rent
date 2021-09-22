@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.StoryDao">
+
+<!-- ## 필수 생성 Query ########################################### -->
+<!-- ## //.필수 생성 Query ######################################## -->
+
+    <select id="select_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS ST.*
+		  FROM
+				(SELECT 		
+					 		RR.review_pid,
+			                RR.rcmodel_pid,
+			                RR.review_story,
+			                RR.point_car,
+			                RR.point_easy,
+			                RR.point_kind,
+			                RR.reg_dtime,
+			                DATE_FORMAT(RR.mod_dtime,'%y년 %m월 %d일') AS mod_dtime,
+			                (SELECT mem_id FROM member_master WHERE mem_pid = RR.mem_pid) AS mem_id,
+			                (SELECT mem_name FROM member_master WHERE mem_pid = RR.mem_pid) AS mem_name,
+			                RMM.point_average,
+			                RMM.model_name,
+			                PC.corp_public_name,
+			                RC.area_code
+			        FROM    rentcar_review AS RR,
+			                provider_corp AS PC,
+			                rentcar_corp AS RC,
+			                rentcar_model_master AS RMM
+			        WHERE   PC.provider_pid = RC.provider_pid 
+			                AND RR.rccorp_pid = RC.rccorp_pid
+			                AND RMM.rcmodel_pid = RR.rcmodel_pid
+			                AND RR.review_status = 1
+				 ORDER BY	RR.review_pid DESC
+                ) AS ST
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+	        <if test="area_type!=null">
+	           AND  area_code = #{area_type}
+	        </if>
+		        <if test="search_type!=null">
+	           AND  ${search_type} like '%${search_value}%'
+	        </if>
+	        <if test="search_sdate!=null">
+	           AND  reg_dtime between '${search_sdate}000000' and '${search_edate}235959'
+	        </if>        
+		</trim>
+        <if test="offset != null and row_count != null">
+            LIMIT #{offset}, #{row_count}
+        </if>
+    </select>
+
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+</mapper>

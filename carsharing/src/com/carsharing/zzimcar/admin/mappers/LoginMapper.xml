@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.carsharing.zzimcar.admin.dao.LoginDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<insert id="insert_base" parameterType="Map">
+		INSERT INTO member_master
+		(
+			mem_pid			, mem_id			, mem_pwd				, mem_name	,
+			mem_birth		, mem_email			, mem_phone				, mem_isauth, auth_num,
+			filter_car_type	, filter_car_option	, filter_car_eval		,
+			device_type		, push_id			, mem_type				, mem_level	,
+			last_login_dtime, mem_status		,
+			reg_dtime		, mod_dtime)
+		VALUES
+		(
+			#{mem_pid}			, #{mem_id}				, #{mem_pwd}			, #{mem_name} 	,
+			#{mem_birth}		, #{mem_email}			, #{mem_phone}			, #{mem_isauthN}, #{auth_num},
+			#{filter_car_type}	, #{filter_car_option}	, #{filter_car_eval0}	,
+			#{device_type}		, #{push_id}			, #{mem_type}			, #{mem_level}	,
+			#{last_login_dtime}	, #{mem_status1}		,
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s") 
+		)
+		
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="mem_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	member_master
+		   SET	mem_pid 			= #{mem_pid}			,
+				mem_id 				= #{mem_id}				,
+				mem_pwd 			= #{mem_pwd}			,
+				mem_name 			= #{mem_name}			,
+				mem_birth 			= #{mem_birth}			,
+				mem_email 			= #{mem_email}			,
+				mem_phone 			= #{mem_phone}			,
+				mem_isauth 			= #{mem_isauthN}		,
+				auth_num 			= #{auth_num}			,
+				filter_car_type 	= #{filter_car_type}	,
+				filter_car_option 	= #{filter_car_option}	,
+				filter_car_eval 	= #{filter_car_eval0}	,
+				device_type 		= #{device_type}		,
+				push_id 			= #{push_id}			,
+				mem_type 			= #{mem_type}			,
+				mem_level 			= #{mem_level}			,
+				last_login_dtime 	= #{last_login_dtime}	,
+				mem_status 			= #{mem_status1}		,
+				mod_dtime 			= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE	mem_pid 			= #{mem_pid}
+	</update>
+	
+	<delete id="delete_by_pk" parameterType="int">
+		DELETE	FROM member_master 
+		 WHERE	mem_pid = #{mem_pid}		
+	</delete>
+		
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT 	mem_pid				,
+    			mem_id				,
+    			mem_pwd				,
+			    mem_name			,
+			    mem_birth			,
+			    mem_email			,
+			    mem_phone			,
+			    mem_isauth			,
+			    auth_num			,
+			    filter_car_type		,
+			    filter_car_option	,
+			    filter_car_eval		,
+			    device_type			,
+			    push_id				,
+			    mem_type			,
+			    mem_level			,
+			    last_login_dtime	,
+			    mem_status			,
+			    reg_dtime			,
+			    mod_dtime
+		 FROM 	member_master
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT 	mem_pid				,
+    			mem_id				,
+    			mem_pwd				,
+			    mem_name			,
+			    mem_birth			,
+			    mem_email			,
+			    mem_phone			,
+			    mem_isauth			,
+			    auth_num			,
+			    filter_car_type		,
+			    filter_car_option	,
+			    filter_car_eval		,
+			    device_type			,
+			    push_id				,
+			    mem_type			,
+			    mem_level			,
+			    last_login_dtime	,
+			    mem_status			,
+			    reg_dtime			,
+			    mod_dtime
+		 FROM 	member_master
+		 WHERE	mem_pid = #{mem_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+
+	<select id="Login_Check" parameterType="Map" resultType="rm">
+		SELECT  mem_pid				,
+				mem_name			,
+				mem_type			,
+				mem_pw
+		  FROM 	member_master 
+		 WHERE 	mem_id = #{mem_id}
+	</select>
+
+
+	
+</mapper>

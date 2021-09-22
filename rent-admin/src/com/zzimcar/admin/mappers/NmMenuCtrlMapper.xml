@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NmMenuCtrl">
+
+	<select id="getNmMenuCtrlList" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				menu_pid,
+				menu_code,
+				menu_category,
+				menu_name,
+				menu_url,
+				menu_status,
+				menu_type,
+				menu_sort,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM nm_menu	
+		WHERE 1=1
+		AND menu_status = '1'								
+		ORDER BY menu_sort ASC
+		<if test="nmCtrl != null">
+			<if test="offset != null and row_count != null">
+				LIMIT #{offset}, #{row_count}
+			</if>
+			<if test="offset == null or row_count == null">
+				LIMIT 1, 10
+			</if>
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+	
+	<select id="getNmMenuCtrlView" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				menu_pid,
+				menu_code,
+				menu_category,
+				menu_name,
+				menu_url,
+				menu_status,
+				menu_type,
+				menu_sort,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM nm_menu
+		WHERE menu_pid = #{menuPid}
+		AND menu_status = '1'
+	</select>
+		
+	<insert id="insertNmMenuCtrl" parameterType="Map">
+		INSERT INTO nm_menu
+					(
+					menu_code,
+					menu_category,
+					menu_name,
+					menu_url,
+					menu_status,
+					menu_sort,
+					reg_mem_pid,
+					mod_mem_pid,
+					reg_dtime,
+					mod_dtime,
+					menu_type
+					)
+					VALUES
+					(
+					#{menuCode },
+					#{menuCategory },
+					#{menuName },
+					#{menuUrl },
+					#{menuStatus },
+					#{menuSort },
+					#{memPid },
+					#{memPid },
+					now() + 0,
+					now() + 0,
+					#{menuType}
+					)
+			<selectKey resultType="int" keyProperty="menuPid" order="AFTER">
+				SELECT LAST_INSERT_ID()
+			</selectKey>		
+	</insert>
+	
+	<select id="getSuperMasterPid" parameterType="Map" resultType="rm">
+		SELECT mem_pid FROM member_master WHERE mem_level = 99
+	</select>
+	
+	<insert id="insetRollMenu" parameterType="Map">
+		INSERT INTO member_role
+				(
+				mem_pid,
+				menu_pid,
+				menu_is_use,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime,
+				mod_dtime
+				)
+				VALUES
+				(
+				#{roleMemPid},
+				#{menuPid },
+				'Y',
+				#{sessionPid },
+				#{sessionPid },
+				now() + 0,
+				now() + 0
+				)
+	</insert>
+
+	<update id="updateNmMenuCtrl" parameterType="Map">
+		UPDATE nm_menu 
+				SET 
+				menu_name = #{menuName},
+				menu_url = 	#{menuUrl},
+				menu_code = #{menuCode},
+				menu_status = #{menuStatus},
+				menu_sort = #{menuSort},
+				menu_type = #{menuType},
+				mod_mem_pid = #{modMemPid},
+				mod_dtime = now() + 0
+		WHERE 	menu_pid = #{menuPid}	
+				
+	</update>
+	
+	<update id="deleteNmMenuCtrl" parameterType="Map" >
+	
+	UPDATE nm_menu SET 
+		 	menu_status = '9'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				menu_pid IN
+				<foreach collection="excludePidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			menu_pid = #{menuPid}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<delete id="deleteRoleMenu" parameterType="Map" >
+	
+	DELETE FROM member_role
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				menu_pid IN
+				<foreach collection="excludePidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			menu_pid = #{menuPid}
+			</otherwise>
+		</choose>
+	</delete>
+
+	<select id="getMenuPath" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				menu_pid,
+				menu_code,
+				menu_category,
+				menu_name,
+				menu_url,
+				menu_status,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM nm_menu
+		WHERE menu_url = #{menuUrl}
+		AND menu_status = '1'
+	</select>
+	
+		<select id="getSideMenu" parameterType="Map" resultType="rm">
+		SELECT SQL_CALC_FOUND_ROWS
+				menu_pid,
+				menu_code,
+				menu_category,
+				menu_name,
+				menu_url,
+				menu_status,
+				menu_type,
+				reg_mem_pid,
+				mod_mem_pid,
+				date_format(reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM nm_menu
+		WHERE 
+		1=1
+		AND menu_status = '1'
+		<if test="resultMap != '' and resultMap != null ">
+			AND menu_pid IN
+			<foreach collection="resultMap" item="pidList"  open="(" close=")" separator=",">
+			           #{pidList.menuPid}
+			</foreach>
+		</if>
+		ORDER BY menu_sort asc
+	</select>
+
+	
+</mapper>

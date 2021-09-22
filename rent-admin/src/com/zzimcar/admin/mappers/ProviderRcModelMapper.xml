@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ProviderRcModelDao">
+	<select id="select_page" parameterType="Map"  resultType="rm">
+	   SELECT	SQL_CALC_FOUND_ROWS
+	   			ST.is_bundling,
+		        ST.rcmodel_pid,
+				ST.model_code,
+				ST.model_name,
+				ST.engine_cc,
+				ST.seater_count,
+				ST.min_price,
+				ST.class_code,
+				ST.gear_code,
+				ST.maker_code,
+				ST.fuel_code,
+				PC.corp_name,
+				PC.corp_public_name,
+				RC.is_direct
+		FROM
+		        rentcar_model_master    AS ST,
+		        provider_corp           AS PC,
+		        rentcar_corp            AS RC
+	   WHERE
+				ST.rccorp_pid = RC.rccorp_pid AND  PC.provider_pid = RC.provider_pid
+				<if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                    AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+                </if>
+				<if test="NONSELECT !=null and NONSELECT !=''">
+                    AND ST.model_status != #{NONSELECT}
+                </if>
+                <if test="model_status_view !=null and model_status_view !=''">
+                    AND ST.model_status = #{model_status_view}
+                </if>
+                <if test="gear_code_view !=null and gear_code_view !=''">
+                    AND ST.gear_code = #{gear_code_view}
+                </if>
+                 <if test="fuel_code_view !=null and fuel_code_view !=''">
+                    AND ST.fuel_code = #{fuel_code_view}
+                </if>
+                 <if test="class_code_view !=null and class_code_view !=''">
+                    AND ST.class_code = #{class_code_view}
+                </if>
+                 <if test="maker_code_view !=null and maker_code_view !=''">
+                    AND ST.maker_code = #{maker_code_view}
+                </if>
+                 <if test="isBundlingView !=null and isBundlingView !=''">
+                    AND ST.is_bundling = #{isBundlingView}
+                </if>     
+                <if test="direct_view !=null and direct_view !=''">
+                    AND RC.is_direct = #{direct_view}
+                </if>
+                <if test="areacode_view !=null and areacode_view !=''">
+                    AND RC.area_code = #{areacode_view}
+                </if>              
+     ORDER BY  ST.rcmodel_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT ${offset}, ${row_count}
+		</if>
+	
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+	
+	<insert id="insert_base" parameterType="Map">
+   INSERT INTO	
+   				rentcar_model_master
+   		   SET
+   				reg_mem_pid					= #{reg_mem_pid}
+		   		, reg_dtime					= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		   		, mod_mem_pid				= #{reg_mem_pid}
+		   		, mod_dtime					= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		   		, rccorp_pid				= #{rccorp_pid}
+		   		, is_bundling				= #{isBundling}
+		   		<choose>
+		   			<when test="erp_pid != null and erp_pid !=''">
+		   				, erp_pid			= #{erp_pid}
+		   				, erp_model_code	= #{erp_model_code}
+		   			</when>
+		   			<otherwise>
+		   				, erp_pid			= 0
+		   			</otherwise>
+		   		</choose>
+		   		, model_name				= #{model_name}
+		   		, nmmodel_pid				= #{nmmodel_pid}
+		   		, model_code				= #{model_code}
+		   		, class_code				= #{class_code}
+		   		, gear_code					= #{gear_code}
+		   		, maker_code				= #{maker_code}
+		   		, fuel_code					= #{fuel_code}
+		   		, car_count					= #{car_count}
+		   		, engine_cc					= #{engine_cc}
+		   		, carrier_code				= #{carrier_code}
+   				, seater_count				= #{seater_count}
+   				, isforeign_car				= #{isforeign_car}
+   				, iselectric_car			= #{iselectric_car}
+   				<if test="img_url_list_path != null and img_url_list_path != ''">
+   					, img_url_list			= #{img_url_list_path}
+   				</if>
+   				<if test="img_url_detail_path != null and img_url_detail_path != ''">
+   					, img_url_detail		= #{img_url_detail_path}
+   				</if>
+   				, min_price                 = IF(#{min_price} > 0, #{min_price}, 0)
+   				, license_code				= REPLACE(#{license_code}, "LC_", "")
+   				, license_age				= #{license_age}
+   				, license_year				= #{license_year}
+   				, insu_pub_age				= #{insu_pub_age}
+   				, insu_pub_year				= #{insu_pub_year}
+   				, insu_pub_guide			= #{insu_pub_guide}
+   				, insu_pub_limit_amount		= #{insu_pub_limit_amount}
+   				, insu_full_age				= #{insu_full_age}
+   				, insu_full_year			= #{insu_full_year}
+   				, insu_full_guide			= #{insu_full_guide}
+   				, insu_full_limit_amount	= #{insu_full_limit_amount}
+   				, insu_selfcar				= #{insu_selfcar}
+   				, price_standard			= #{price_standard}
+   				, price_dc_rate				= #{price_dc_rate}
+   				, price_sale				= #{price_sale}
+   				, price_insu_pub			= #{price_insu_pub}
+   				, price_insu_full			= #{price_insu_full}
+   				, model_tags				= #{model_tags}
+   				, sort_number				= #{sort_number}
+   				, model_status              = #{model_status}
+   				
+   				<if test="dir_rate != null and dir_rate != ''">
+                    , dir_rate              = #{dir_rate}
+                </if>
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<select id="select_all" parameterType="Map"  resultType="rm">
+        SELECT  model_name,
+                nmmodel_pid,
+                model_code,
+                class_code,
+                gear_code,
+                maker_code,
+                fuel_code,
+                engine_cc,
+                carrier_code,
+                seater_count,
+                img_url_list,
+                img_url_detail,
+                min_price,
+                model_tags,
+                min_price,
+                license_code,          
+                license_age,            
+                license_year,            
+                insu_pub_age,           
+                insu_pub_year,          
+                insu_pub_guide,          
+                insu_pub_limit_amount,   
+                insu_full_age,  
+                insu_full_year,          
+                insu_full_guide,         
+                insu_full_limit_amount,  
+                insu_selfcar, 
+                price_standard,          
+                price_dc_rate,         
+                price_sale,          
+                price_insu_pub,          
+                price_insu_full,         
+                sort_number,        
+                model_status            
+          FROM  rentcar_model_master 
+    </select>
+    
+    <delete id="delete_by_pk" parameterType="int">
+        DELETE  FROM rentcar_model_master 
+         WHERE  rcmodel_pid    = #{rcmodel_pid}      
+    </delete>
+	
+	<update id="update_by_pk" parameterType="Map">
+        UPDATE  rentcar_model_master 
+           SET  mod_mem_pid                 = #{reg_mem_pid}
+                , mod_dtime                 = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                <if test="rccorp_pid !=null and rccorp_pid != ''">
+                    , rccorp_pid            = #{rccorp_pid}
+                </if>
+                <if test="model_name !=null and model_name != ''">
+                    , model_name            = #{model_name}
+                </if>
+                <if test="model_code !=null and model_code != ''">
+                    , model_code            = #{model_code}
+                </if>
+                <if test="class_code !=null and class_code != ''">
+                    , class_code            = #{class_code}
+                </if>
+                <if test="maker_code !=null and maker_code != ''">
+                    , maker_code            = #{maker_code}
+                    , isforeign_car         = #{isforeign_car}
+                </if>
+                <if test="carrier_code !=null and carrier_code != ''">
+                    , carrier_code            = #{carrier_code}
+                </if>
+                , gear_code                 = #{gear_code}
+                , fuel_code                 = #{fuel_code}
+                , car_count                 = #{car_count}
+                , engine_cc                 = #{engine_cc}
+                , seater_count              = #{seater_count}
+               
+                <if test="img_url_list_path != null and img_url_list_path != ''">
+                    <choose>
+                       <when test="originalUrlList_comeback != null">
+	                       , img_url_list   = #{originalUrlList}
+	                   </when>
+	                   <otherwise>
+	                       , img_url_list   = #{img_url_list_path}
+	                   </otherwise>
+                    </choose>
+                </if>
+                <if test="img_url_detail_path != null and img_url_detail_path != ''">
+                    <choose>
+                       <when test="originalUrlDetail_comeback  != null">
+                           , img_url_detail = #{originalUrlDetail}
+                       </when>
+                       <otherwise>
+                           , img_url_detail = #{img_url_detail_path}
+                       </otherwise>
+                    </choose>
+                </if>
+                , is_bundling				= #{isBundling}
+                , iselectric_car            = #{iselectric_car}
+                , min_price                 = IF(#{min_price} > 0, #{min_price}, 0)
+                , license_code              = REPLACE(#{license_code}, "LC_", "")
+                , license_age               = #{license_age}
+                , license_year              = #{license_year}
+                , insu_pub_age              = #{insu_pub_age}
+                , insu_pub_year             = #{insu_pub_year}
+                , insu_pub_guide            = #{insu_pub_guide}
+                , insu_pub_limit_amount     = #{insu_pub_limit_amount}
+                , insu_pub_calculus         = #{insu_pub_calculus}
+                , insu_pub_name             = #{insu_pub_name}
+                , insu_full_age             = #{insu_full_age}
+                , insu_full_year            = #{insu_full_year}
+                , insu_full_guide           = #{insu_full_guide}
+                , insu_full_limit_amount    = #{insu_full_limit_amount}
+                , insu_full_calculus        = #{insu_full_calculus}
+                , insu_full_name            = #{insu_full_name}
+                , insu_selfcar              = #{insu_selfcar}
+                , price_standard            = #{price_standard}
+                , price_dc_rate             = #{price_dc_rate}
+                , price_sale                = #{price_sale}
+                , price_insu_pub            = #{price_insu_pub}
+                , price_insu_full           = #{price_insu_full}
+                , model_tags                = #{model_tags}
+                , sort_number               = #{sort_number}
+                , model_status              = #{model_status}
+                
+                <if test="dir_rate != null and dir_rate != ''">
+                    , dir_rate              = #{dir_rate}
+                </if>
+        WHERE
+                rcmodel_pid                 = #{rcmodel_pid}
+    </update>
+    
+    <update id="update_status" parameterType="Map">
+        UPDATE  rentcar_model_master
+           SET  model_status    = #{model_status}
+                , mod_mem_pid   = #{mod_mem_pid}
+                , mod_dtime     = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+         WHERE  rcmodel_pid     = #{rcmodel_pid}   
+    </update>
+	
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT	
+		        rentcar.rcmodel_pid,
+		        rentcar.is_bundling,
+				rentcar.model_name,
+				rentcar.rccorp_pid,
+				rentcar.erp_pid,
+				rentcar.erp_model_code,
+                rentcar.nmmodel_pid,
+                rentcar.model_code,
+                rentcar.class_code,
+                rentcar.gear_code,
+                rentcar.maker_code,
+                rentcar.fuel_code,
+                rentcar.engine_cc,
+                rentcar.carrier_code,
+                rentcar.seater_count,
+                rentcar.img_url_list,
+                rentcar.img_url_detail,
+                rentcar.min_price,
+                rentcar.model_tags,
+                rentcar.min_price,
+                rentcar.isforeign_car,
+                rentcar.iselectric_car,
+                rentcar.license_code,          
+                rentcar.license_age,            
+                rentcar.license_year,            
+                rentcar.insu_pub_age,           
+                rentcar.insu_pub_year,          
+                rentcar.insu_pub_guide,          
+                rentcar.insu_pub_limit_amount,
+                rentcar.insu_pub_calculus,
+                rentcar.insu_pub_name,   
+                rentcar.insu_full_age,  
+                rentcar.insu_full_year,          
+                rentcar.insu_full_guide,         
+                rentcar.insu_full_limit_amount,  
+                rentcar.insu_full_calculus,
+                rentcar.insu_full_name,  
+                rentcar.insu_selfcar, 
+                rentcar.price_standard,          
+                rentcar.price_dc_rate,         
+                rentcar.price_sale,          
+                rentcar.price_insu_pub,          
+                rentcar.price_insu_full,         
+                rentcar.sort_number,        
+                rentcar.model_status,
+                rcorp.is_direct,
+                rentcar.dir_rate,         
+				(SELECT 
+                    pcorp.corp_public_name 
+                 FROM 
+                    provider_corp AS pcorp
+                 JOIN
+                    rentcar_corp AS rcorp
+                 ON
+                    pcorp.provider_pid = rcorp.provider_pid
+                WHERE 
+                    rentcar.rccorp_pid = rcorp.rccorp_pid
+                ) AS corp_public_name,
+				IFNULL(
+                    (SELECT 
+                        regt.mem_name 
+                     FROM
+                        member_master AS regt
+                     WHERE
+                        rentcar.reg_mem_pid = regt.mem_pid
+                    ),'알수없음')   AS reg_mem_name,
+                IFNULL(
+                    (SELECT 
+                        modt.mem_name 
+                     FROM
+                        member_master AS modt
+                     WHERE
+                        rentcar.mod_mem_pid = modt.mem_pid
+                    ),'알수없음')   AS mod_mem_name,
+                model.img_url_list AS original_url_list,
+                model.img_url_detail AS original_url_detail
+		  FROM	
+		  		rentcar_model_master			AS rentcar
+     LEFT JOIN  
+                nmcar_model                     AS model
+            ON  
+                model.nmmodel_pid  = rentcar.nmmodel_pid
+	      JOIN	
+	 			rentcar_corp 					AS rcorp
+	 		ON	
+	 			rentcar.rccorp_pid	= rcorp.rccorp_pid
+		 WHERE	
+		 		rcmodel_pid						= #{rcmodel_pid}
+	</select>
+	
+	<select id="select_company_list" parameterType="String"  resultType="rm">
+		SELECT
+				RC.rccorp_pid,
+				PC.corp_public_name,
+				RC.is_direct,
+				RC.area_code
+				<if test="area_sort !=null">
+                , (SELECT 
+                     code_pid 
+                   FROM 
+                     common_code 
+                   WHERE 
+                     code_div='ZZIMCAR_AREA' 
+                     AND code_key = RC.area_code 
+                     AND code_status = 1 
+                     <if test="area_sort == 'ASC' or area_sort == 'DESC'">
+                         ORDER BY code_pid ${area_sort} 
+                     </if>
+                   LIMIT 1) AS code_pid
+                </if>
+		  FROM
+		  		rentcar_corp 		AS RC
+	 LEFT JOIN	
+	 			provider_corp 		AS PC
+	 		ON	
+	 			PC.provider_pid = RC.provider_pid
+	 	 WHERE
+	 	 		<choose>
+					<when test="searchWord != null and searchWord !=''">
+						UPPER(PC.corp_public_name) LIKE UPPER(CONCAT('%',#{searchWord},'%'))
+					</when>
+					<otherwise>
+						(1)
+					</otherwise>
+				</choose>
+				<choose>
+				<when test="NONSELECT != '' and NONSELECT != null">
+					AND RC.corp_status != #{NONSELECT}
+					AND PC.corp_status != #{NONSELECT}
+				</when>
+				<otherwise>
+					AND RC.corp_status != '00'
+					AND PC.corp_status != '00'
+				</otherwise>
+				</choose>
+				AND  RC.corp_status != '99'
+				AND  PC.corp_status != '99'
+		 ORDER BY <if test="area_sort !=null and (area_sort == 'ASC' or area_sort == 'DESC')">
+		              code_pid ${area_sort}, 
+		          </if>
+		          PC.corp_public_name ASC		
+	</select>
+	
+	<select id="select_car_list" parameterType="String"  resultType="rm">
+		SELECT
+				model.model_name,
+				model.nmmodel_pid,
+				model.model_code,
+				model.class_code,
+				model.gear_code,
+				model.maker_code,
+				model.fuel_code,
+				model.engine_cc,
+				model.carrier_code,
+				model.seater_count,
+				model.img_url_list,
+				model.img_url_detail,
+				model.min_price,
+				model.model_tags,
+				model.class_code,
+				model.gear_code,
+				model.maker_code,
+				model.fuel_code,
+				model.carrier_code
+		  FROM
+		  		nmcar_model 			AS model
+	 	 WHERE
+	 	 		<choose>
+					<when test="searchWord != null and searchWord !=''">
+						UPPER(model_name) LIKE UPPER(CONCAT('%',#{searchWord},'%'))
+					</when>
+					<otherwise>
+						(1)
+					</otherwise>
+				</choose>
+				<if test="NONSELECT !=null and NONSELECT !=''">
+					AND model.nmcar_status != #{NONSELECT}
+				</if>
+	</select>
+	
+	<select id="select_rcmodel_option_by_pk" parameterType="int"  resultType="rm">
+	   SELECT  
+	           distinct common.code_key,
+	           common.code_div,
+	           common.code_value,
+	           IF(moption.code_key IS NOT NULL, "Y", "N") AS activate 
+	     FROM  common_code AS common 
+	LEFT JOIN  rentcar_model_option AS moption 
+	       ON  
+	           common.code_div = moption.code_div 
+	           AND common.code_key = moption.code_key 
+	           AND moption.rcmodel_pid = #{rcmodel_pid}
+	    WHERE  common.code_status = '1'
+	           AND (
+                   common.code_div = "CAR_YEAR_CODE"
+                       OR
+                   common.code_div = "CAR_FUEL_CODE"
+                       OR
+                   common.code_div = "CAR_OPTION_HEALTH_CODE"
+                       OR
+                   common.code_div = "CAR_OPTION_SAFE_CODE"
+                       OR
+                   common.code_div = "CAR_OPTION_SMART_CODE"
+                       OR
+                   common.code_div = "CAR_OPTION_SOUND_CODE"
+                       OR
+                   common.code_div = "CAR_OPTION_ETC_CODE"
+                       OR
+                   common.code_div = "CAR_INSU_CODE"
+                       OR
+                   common.code_div = "CAR_LICENSE_CODE"
+               )
+     ORDER BY  common.code_div desc, common.code_key asc
+    </select>
+    
+    
+    <delete id="delete_rcmodel_option_by_pk" parameterType="int">
+        DELETE  FROM rentcar_model_option 
+         WHERE  rcmodel_pid    = #{rcmodel_pid}      
+    </delete>
+    
+    <insert id="insert_rcmodel_option_by_pk" parameterType="int">
+        INSERT  INTO rentcar_model_option
+           SET  code_div    = #{code_div},
+                code_key    = #{code_key},
+                rcmodel_pid = #{rcmodel_pid}      
+    </insert>
+</mapper>

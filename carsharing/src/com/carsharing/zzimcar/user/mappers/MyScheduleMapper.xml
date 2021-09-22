@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.carsharing.zzimcar.user.dao.MyScheduleDao">
+
+	<!-- 검색결과 전체 개수 구하기 -->	
+	<select id="select_found_rows" resultType="int">
+		SELECT	FOUND_ROWS() AS total_count 
+	</select>
+
+	<!-- My 배차(예약) 조회 -->	
+	<select id="select_myschedule" parameterType="Map" resultType="rm">
+		/* MyScheduleMapper.xml - select_myschedule */
+		SELECT	SQL_CALC_FOUND_ROWS
+				ST.*, SCM.*
+		  FROM	sharing_car_schedule ST, sharing_car_master SCM 
+		 WHERE	ST.mem_pid = #{mem_pid}
+		   AND	ST.scm_pid = SCM.scm_pid
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+	</select>
+
+	<!-- My 배차(예약) 취소 -->	
+	<update id="cancel_myschedule" parameterType="Map">
+		/* MyScheduleMapper.xml - cancel_myschedule */
+		UPDATE	sharing_car_schedule
+		   SET	scs_status	= "10",
+		   		mod_mem_pid	= #{mod_mem_pid},
+				mod_dtime	= DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		 WHERE	scs_pid = #{scs_pid}		
+	</update>
+
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		/* MyScheduleMapper.xml - select_by_pk */
+		SELECT	ST.*
+		  FROM	sharing_car_schedule ST 
+		 WHERE	ST.scs_pid = #{scs_pid}
+	</select>
+
+</mapper>

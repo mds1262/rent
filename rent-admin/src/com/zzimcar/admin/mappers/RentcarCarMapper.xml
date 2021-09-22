@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RentcarCar">
+
+	<select id="getRentcarCar" parameterType="Map" resultType="rm">
+		SELECT
+			SQL_CALC_FOUND_ROWS
+			PC.corp_name,
+		    ST.*
+		 FROM   
+			(SELECT 
+					RC.provider_pid,
+					RMM.model_name,
+					RMM.model_code,
+					RR.rccar_pid,
+					RR.rccorp_pid,
+					RR.rcmodel_pid,
+					RR.register_code,
+					RR.rent_method,
+					RR.car_number,
+					RR.car_sdate,
+					RR.car_edate,
+					RR.model_year,
+					RR.model_month,
+					RR.car_color,
+					RR.car_serial_number,
+					RR.prov_model_code,
+					RR.navi_provider,
+					RR.engine_cc,
+					RR.navi_serial,
+					RR.car_memo,
+					RR.car_status,
+					RR.reg_mem_pid,
+					RR.mod_mem_pid,
+					RC.area_code,
+					date_format(RR.reg_dtime, '%Y-%m-%d')as reg_dtime,
+					date_format(RR.mod_dtime, '%Y-%m-%d')as mod_dtime
+			FROM rentcar_car RR 
+			JOIN rentcar_model_master RMM
+			ON RR.rcmodel_pid  = RMM.rcmodel_pid
+			AND RR.rccorp_pid = RMM.rccorp_pid
+		    JOIN rentcar_corp RC
+		    ON RR.rccorp_pid = RC.rccorp_pid
+		    AND RR.rccorp_pid = RMM.rccorp_pid
+			WHERE RR.car_status != '9'
+			AND RMM.model_status != '9') ST
+		LEFT JOIN provider_corp PC
+		ON ST.provider_pid = PC.provider_pid
+		WHERE 1=1	
+		    <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+            </if>
+			<if test="modelName != '' and modelName != null ">
+				AND ST.model_name LIKE concat('%',#{modelName},'%')
+			</if>
+			<if test="rccorpPid != '' and rccorpPid != null ">
+				<if test="rccorpPid != 0 ">
+					AND ST.rccorp_pid = #{rccorpPid}
+				</if>	
+			</if>
+			<if test="areacode_view !=null and areacode_view !=''">
+                AND ST.area_code = #{areacode_view}
+            </if>
+			<if test="modelYear != '' and modelYear != null ">
+				AND ST.model_year = #{modelYear}
+			</if>
+			<if test="modelMonth != '' and modelMonth != null ">
+				AND ST.model_month = #{modelMonth}
+			</if>
+			<if test="carStatus != '' and carStatus != null ">
+				AND ST.car_status = #{carStatus}
+			</if>							
+		ORDER BY ST.rccar_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+		<if test="offset == null or row_count == null">
+			LIMIT 1, 10
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+
+	<insert id="insertRentcarCar" parameterType="Map">
+		INSERT INTO rentcar_car
+					(
+					rccorp_pid,
+					rcmodel_pid,
+					register_code,
+					rent_method,
+					car_number,
+					car_sdate,
+					car_edate,
+					model_year,
+					<if test="modelMonth != '' and modelMonth != null">					
+					model_month,
+					</if>
+					car_color,
+					car_serial_number,
+					prov_model_code,
+					navi_provider,
+					engine_cc,
+					navi_serial,
+					car_memo,
+					car_status,
+					reg_mem_pid,
+					mod_mem_pid,
+					reg_dtime,
+					mod_dtime
+					)
+					VALUES
+					(
+					#{rccorpPid },
+					#{rcmodelPid },
+					#{registerCode },
+					#{rentMethod},
+					#{carNumber },
+					DATE_FORMAT(#{carSdate }, '%Y%m%d'),					
+					DATE_FORMAT(#{carEdate }, '%Y%m%d'),
+					#{modelYear },
+					<if test="modelMonth != '' and modelMonth != null">
+					#{modelMonth },
+					</if>
+					#{carColor },
+					#{carSerialNumber },
+					#{provModelCode },
+					#{naviProvider },
+					#{engineCc },
+					#{naviSerial },
+					#{carMemo },
+					#{carStatus },
+					#{regMemPid },
+					#{regMemPid },
+					now() + 0,
+					now() + 0
+					)
+		</insert>	
+	<select id="getRentCarcarView" parameterType="map" resultType="rm">
+		SELECT 
+				RC.provider_pid,
+				RMM.model_name,        
+				RR.rccar_pid,
+				RR.rccorp_pid,
+				RR.rcmodel_pid,
+				RR.register_code,
+				RR.rent_method,
+				RR.car_number,
+				RR.car_sdate,
+				RR.car_edate,
+				RR.model_year,
+				RR.model_month,
+				RR.car_color,
+				RR.car_serial_number,
+				RR.prov_model_code,
+				RR.navi_provider,
+				RR.engine_cc,
+				RR.navi_serial,
+				RR.car_memo,
+				RR.car_status,
+				RR.reg_mem_pid,
+				RR.mod_mem_pid,
+				date_format(RR.reg_dtime, '%Y-%m-%d')as reg_dtime,
+				date_format(RR.mod_dtime, '%Y-%m-%d')as mod_dtime
+		FROM  rentcar_car RR,rentcar_model_master  RMM,rentcar_corp RC
+		WHERE RR.rcmodel_pid = RMM.rcmodel_pid
+			AND RR.rccorp_pid=RC.rccorp_pid
+		    AND RMM.rccorp_pid=RC.rccorp_pid
+			AND RR.rccar_pid = #{rccarPid}
+	</select>
+	
+	<update id="updateRentcarCar" parameterType="Map" >
+		UPDATE rentcar_car
+		SET
+				rccorp_pid = #{rccorpPid },
+				rcmodel_pid = #{rcmodelPid },
+				register_code = #{registerCode },
+				rent_method = #{rentMethod },
+				car_number = #{carNumber },	
+				car_sdate = DATE_FORMAT(#{carSdate }, '%Y%m%d'),
+				car_edate = DATE_FORMAT(#{carEdate }, '%Y%m%d'),
+				model_year = #{modelYear },
+				model_month = #{modelMonth },
+				car_color = #{carColor },
+				car_serial_number = #{carSerialNumber },
+				prov_model_code = #{provModelCode },
+				navi_provider = #{naviProvider },
+				engine_cc = #{engineCc },
+				navi_serial = #{naviSerial },
+				car_memo = #{carMemo },
+				car_status = #{carStatus },
+				mod_mem_pid = #{modMemPid },
+				mod_dtime = now() + 0
+		WHERE rccar_pid = #{rccarPid}
+
+	</update>
+
+<delete id="deletePromotion" parameterType="Map" >
+	
+	UPDATE  rentcar_car SET
+			car_status = '9'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				rccar_pid IN
+				<foreach collection="rccarCarPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			rccar_pid = #{rccarPid}
+			</otherwise>
+		</choose>
+</delete>
+	<select id="getReviewList" parameterType="Map" resultType="rm">
+
+		SELECT SQL_CALC_FOUND_ROWS
+				review_pid,
+				review_story				
+		FROM rentcar_review
+		WHERE 1=1
+		AND review_status != '9'
+		<if test="offset != null">
+		AND rcmodel_pid in
+		<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           	 #{pidList}
+       	</foreach>
+       	ORDER BY mod_dtime DESC
+       	LIMIT #{offset}, #{row_count}
+       	</if>
+       	<if test="offset == null ">
+       	AND review_pid = #{reviewPid}	
+       	</if>
+	</select>
+
+<!--  
+	<select id="getReviewList" parameterType="Map" resultType="rm">
+
+		SELECT SQL_CALC_FOUND_ROWS
+				RR.review_pid,
+				RR.review_story,
+				RMM.img_url_list,
+                RMM.img_url_detail
+		FROM rentcar_review RR
+        LEFT JOIN rentcar_model_master RMM
+        ON RR.rcmodel_pid = RMM.rcmodel_pid
+		WHERE 1=1
+		AND RR.review_status != '9'
+		AND RMM.model_status !='9'
+		<if test="offset != null">
+		AND RR.rcmodel_pid in
+		<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           	 #{pidList}
+       	</foreach>
+       	ORDER BY RR.mod_dtime DESC
+       	LIMIT #{offset}, #{row_count}
+       	</if>
+       	<if test="offset == null ">
+       	AND RR.review_pid = #{reviewPid}	
+       	</if>
+	</select>-->
+	
+	<select id="getRcModelPid" parameterType="Map" resultType="rm">
+			SELECT 
+			rcmodel_pid 
+			FROM 
+			rentcar_model_master 
+			WHERE model_code = #{rcmodelCode}
+	</select>
+
+
+</mapper>

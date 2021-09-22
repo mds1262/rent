@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.user.dao.MemberPointDao">
+
+	<!-- 마이 사용이력 저장 -->	
+	<insert id="insert_member_point_history" parameterType="Map">
+		INSERT INTO member_point_history (
+			mem_pid, rcorder_pid, point_inout_type, point_amount, point_detail, point_method, point_start_dtime, point_end_dtime, reg_dtime, mod_dtime
+		) VALUES (
+			#{memPid }, #{rcorderPid }, #{pointInoutType }, #{pointAmount }, #{pointDetail }, #{pointMethod }, #{pointStartDtime }, #{pointEndDtime },
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="mem_point_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+
+
+	
+	<!-- 마이 포인트 수정 -->	
+	<update id="update_member_point" parameterType="Map">
+		UPDATE	member_master
+		   SET	mem_point = mem_point + #{memPoint  }
+		 WHERE	mem_pid = #{memPid }
+	</update>
+	
+	<!-- 다이렉트 마이 사용이력 저장 -->	
+	<insert id="insert_direct_point_history" parameterType="Map">
+		INSERT INTO member_point_history (
+			mem_pid, rcorder_pid, rccorp_pid, point_inout_type, point_amount, point_detail, point_method, point_start_dtime, point_end_dtime, reg_dtime, mod_dtime
+		) VALUES (
+			#{memPid }, #{rcorderPid }, #{rccorpPid }, #{pointInoutType }, #{pointAmount }, #{pointDetail }, #{pointMethod }, #{pointStartDtime }, #{pointEndDtime },
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"), DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="mem_point_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<!-- dir 포인트 수정 -->	
+	<update id="update_direct_point" parameterType="Map">
+		UPDATE	dir_point
+		   SET	mem_point = mem_point + #{memPoint  }
+		 WHERE	mem_pid = #{memPid }
+		   AND	rccorp_pid = #{rccorpPid}
+	</update>
+</mapper>

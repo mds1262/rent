@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http//mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Promotion">
+
+	<select id="getPromotionAll" parameterType="Map" resultType="rm">
+		SELECT 	SQL_CALC_FOUND_ROWS
+				   ST.promotion_pid,
+				   ST.rcmodel_pid,
+				  CASE WHEN ST.promotion_device_type = 'P' then 'PC'
+		               ELSE 'MOBILE'
+		           END AS  promotion_device_type, 	      
+				  CASE WHEN ST.rcmodel_pid = '0' then '전체차량'
+		               ELSE RMM.model_name
+		           END AS  model_name,  
+				   CASE WHEN ST.rcmodel_pid = '0' then '전체회사'
+		               ELSE PC.corp_name
+		           END AS  corp_name,  
+		           ST.promotion_div,
+				   ST.promotion_title,
+				   ST.promotion_contents,
+				   ST.promotion_btn,
+				   date_format(ST.promotion_sdtime, '%Y-%m-%d')as promotion_sdtime,
+				   date_format(ST.promotion_edtime, '%Y-%m-%d')as promotion_edtime,
+				   ST.price_original,
+				   ST.price_promotion,
+				   ST.promotion_img_banner,
+				   ST.promotion_img_detail,
+				   ST.promotion_status,
+				   ST.reg_mem_pid,
+				   ST.mod_mem_pid,
+				   str_to_date(ST.reg_dtime, '%Y%m%d')as reg_dtime,
+				   str_to_date(ST.mod_dtime, '%Y%m%d')as mod_dtime
+		 FROM nmpromotion_master ST
+		        LEFT JOIN rentcar_model_master RMM ON ST.rcmodel_pid = RMM.rcmodel_pid
+		       LEFT JOIN rentcar_corp RC ON RMM.rccorp_pid = RC.rccorp_pid
+		       LEFT JOIN provider_corp PC ON RC.provider_pid = PC.provider_pid
+		 WHERE ST.promotion_status != '9'
+			<if test="areacode_view !=null and areacode_view !=''">
+                    AND RC.area_code = #{areacode_view}
+            </if>
+            <if test="scValue != null and scValue !='' and scType != null and scType !=''">
+                    AND UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+            </if>    
+			<if test="promotionSdtime != '' and promotionSdtime != null and promotionEdtime != '' and promotionEdtime != null ">
+				AND
+				(date_format(ST1.promotion_sdtime, '%Y-%m-%d') between date_format(#{promotionSdtime}, '%Y-%m-%d') and date_format(#{promotionEdtime}, '%Y-%m-%d')
+				or date_format(ST1.promotion_edtime, '%Y-%m-%d') between date_format(#{promotionSdtime}, '%Y-%m-%d') and date_format(#{promotionEdtime}, '%Y-%m-%d'))
+			</if>
+			<if test="promotionStatus != '' and promotionStatus != null ">
+				AND promotion_status = #{promotionStatus}
+			</if>								
+		ORDER BY promotion_pid DESC
+		<if test="offset != null and row_count != null">
+			LIMIT #{offset}, #{row_count}
+		</if>
+		<if test="offset == null or row_count == null">
+			LIMIT 1, 10
+		</if>
+	</select>
+
+	<select id="select_found_rows" resultType="int">
+		SELECT FOUND_ROWS() AS
+		total_count
+	</select>
+	
+	<select id="getRcModelSearch" parameterType="Map" resultType="rm">
+		SELECT 
+				rcmodel_pid,
+				rccorp_pid,
+				nmmodel_pid,
+				erp_pid,
+				erp_model_code,
+				model_code,
+				model_name
+		FROM rentcar_model_master
+		WHERE 1=1
+		AND rccorp_pid = #{rccorpPid}
+
+	</select>
+	
+
+		<select id="getPromotionView" parameterType="Map" resultType="rm">
+		SELECT 	SQL_CALC_FOUND_ROWS
+				   ST.promotion_device_type,	
+				   RMM.model_code,	
+				   ST.promotion_pid,
+				   ST.review_pid,
+				   ST.rcmodel_pid,
+				  CASE WHEN ST.rcmodel_pid = '0' then '전체차량'
+		               ELSE RMM.model_name
+		           END AS  model_name,  
+				   CASE WHEN ST.rcmodel_pid = '0' then '전체회사'
+		               ELSE PC.corp_name
+		           END AS  corp_name,  
+		           ST.promotion_div,
+				   ST.promotion_title,
+				   ST.promotion_contents,
+				   ST.promotion_btn,
+				   date_format(ST.promotion_sdtime, '%Y-%m-%d')as promotion_sdtime,
+				   date_format(ST.promotion_edtime, '%Y-%m-%d')as promotion_edtime,
+				   ST.price_original,
+				   ST.price_promotion,
+				   ST.promotion_img_banner,
+				   ST.promotion_img_detail,
+				   ST.promotion_status,
+				   ST.reg_mem_pid,
+				   ST.mod_mem_pid,
+				   str_to_date(ST.reg_dtime, '%Y%m%d')as reg_dtime,
+				   str_to_date(ST.mod_dtime, '%Y%m%d')as mod_dtime
+		 FROM nmpromotion_master ST
+		        LEFT JOIN rentcar_model_master RMM ON ST.rcmodel_pid = RMM.rcmodel_pid
+		       LEFT JOIN rentcar_corp RC ON RMM.rccorp_pid = RC.rccorp_pid
+		       LEFT JOIN provider_corp PC ON RC.provider_pid = PC.provider_pid
+		 WHERE ST.promotion_status != '9'
+		AND ST.promotion_pid = #{promotionPid}
+
+	</select>
+
+	<insert id="insertPromotion" parameterType="Map">
+		INSERT INTO nmpromotion_master
+				(
+				promotion_device_type,
+				<if test="reviewPid != '' and reviewPid != null">
+				review_pid,
+				</if>
+				nmmodel_pid,
+				rcmodel_pid,
+				promotion_div,
+				promotion_title,
+				promotion_contents,
+				promotion_btn,
+				promotion_sdtime,
+				promotion_edtime,
+				price_original,
+				price_promotion,
+				promotion_img_banner,
+				promotion_img_detail,
+				promotion_status,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime,
+				mod_dtime
+				)
+		VALUES
+				(
+				#{promotionDeviceType},
+				<if test="reviewPid != '' and reviewPid != null">
+				#{reviewPid},
+				</if>
+				0,
+				#{rcmodelPid },
+				#{promotionDiv },
+				#{promotionTitle },
+				' ',
+				#{promotionBtn },
+				DATE_FORMAT(#{promotionSdtime}, '%Y%m%d%H%i%s'),
+				DATE_FORMAT(#{promotionEdtime}, '%Y%m%d%H%i%s'),
+				#{priceOriginal },
+				#{pricePromotion },
+				#{promotionImgBanner },
+				#{promotionImgDetail },
+				#{promotionStatus},
+				#{regMemPid },
+				#{regMemPid },
+				now() + 0,
+				now() + 0
+				)
+	</insert>
+
+	<update id="updatePromotion" parameterType="Map" >
+		
+		UPDATE nmpromotion_master
+		SET
+			<if test="reviewPid != '' and reviewPid != null">
+			review_pid=#{reviewPid},
+			</if>
+			promotion_div = #{promotionDiv },
+			promotion_title = #{promotionTitle },
+			promotion_btn = #{promotionBtn },
+			promotion_sdtime = DATE_FORMAT(#{promotionSdtime}, '%Y%m%d%H%i%s'),
+			promotion_edtime = DATE_FORMAT(#{promotionEdtime}, '%Y%m%d%H%i%s'),
+			price_original = #{priceOriginal },
+			price_promotion = #{pricePromotion },
+			<if test='promotionImgBanner != null and promotionImgBanner != "" ' >
+			promotion_img_banner = #{promotionImgBanner },
+			</if>
+			<if test='promotionImgDetail != null and promotionImgDetail != "" ' >
+			promotion_img_detail = #{promotionImgDetail },
+			</if>
+			promotion_status = #{promotionStatus },
+			mod_mem_pid = #{modMemPid },
+			mod_dtime = now() + 0
+		WHERE promotion_pid = #{promotionPid}
+		
+	</update>
+
+<delete id="deletePromotion" parameterType="Map" >
+	
+	UPDATE  nmpromotion_master SET
+			promotion_status = '9'
+		WHERE 
+		<choose>
+			<when test = "PidSize > 0" >
+				promotion_pid IN
+				<foreach collection="promotionPidList" item="pidList"  open="(" close=")" separator=",">
+           			 #{pidList}
+       			 </foreach>
+			</when>
+			<otherwise>
+			promotion_pid = #{promotionPid}
+			</otherwise>
+		</choose>
+</delete>
+	<select id="getReviewList" parameterType="Map" resultType="rm">
+
+		SELECT SQL_CALC_FOUND_ROWS
+				review_pid,
+				review_story				
+		FROM rentcar_review
+		WHERE 1=1
+		AND review_status != '9'
+		<if test="offset != null">
+		AND rcmodel_pid in
+		<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           	 #{pidList}
+       	</foreach>
+       	ORDER BY mod_dtime DESC
+       	LIMIT #{offset}, #{row_count}
+       	</if>
+       	<if test="offset == null ">
+       	AND review_pid = #{reviewPid}	
+       	</if>
+	</select>
+
+<!--  
+	<select id="getReviewList" parameterType="Map" resultType="rm">
+
+		SELECT SQL_CALC_FOUND_ROWS
+				RR.review_pid,
+				RR.review_story,
+				RMM.img_url_list,
+                RMM.img_url_detail
+		FROM rentcar_review RR
+        LEFT JOIN rentcar_model_master RMM
+        ON RR.rcmodel_pid = RMM.rcmodel_pid
+		WHERE 1=1
+		AND RR.review_status != '9'
+		AND RMM.model_status !='9'
+		<if test="offset != null">
+		AND RR.rcmodel_pid in
+		<foreach collection="rcmodelPidList" item="pidList"  open="(" close=")" separator=",">
+           	 #{pidList}
+       	</foreach>
+       	ORDER BY RR.mod_dtime DESC
+       	LIMIT #{offset}, #{row_count}
+       	</if>
+       	<if test="offset == null ">
+       	AND RR.review_pid = #{reviewPid}	
+       	</if>
+	</select>-->
+	
+	<select id="getRcModelPid" parameterType="Map" resultType="rm">
+			SELECT 
+			rcmodel_pid 
+			FROM 
+			rentcar_model_master 
+			WHERE model_code = #{rcmodelCode}
+	</select>
+
+
+</mapper>

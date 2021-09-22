@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.ErpPeristalsisDao">
+
+	<!-- ## 필수 생성 Query ########################################### -->
+	<insert id="insert_base" parameterType="Map">
+		INSERT INTO erp_master
+		(
+			erp_name,
+			erp_api_key,
+			erp_status,
+			reg_mem_pid,
+			mod_mem_pid,
+			reg_dtime,
+			mod_dtime
+		)
+		VALUES
+		(
+			#{erp_name},
+			#{erp_api_key},
+			#{erp_status},
+			#{reg_mem_pid},
+			#{mod_mem_pid},
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+		<!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+		<selectKey resultType="int" keyProperty="erp_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+		</selectKey> 
+	</insert>
+	
+	<update id="update_by_pk" parameterType="Map">
+		UPDATE	erp_master
+		   SET	erp_name = #{erp_name}         ,
+				erp_api_key = #{erp_api_key}   ,
+				erp_status = #{erp_status}     ,
+				reg_mem_pid = #{reg_mem_pid}   ,
+				mod_mem_pid = #{mod_mem_pid}   ,
+				reg_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")       ,
+				mod_dtime = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		WHERE	erp_pid = #{erp_pid}
+	</update>
+	
+	<delete id="delete_by_pk" parameterType="int">
+		DELETE	FROM erp_master 
+		 WHERE	erp_pid = #{erp_pid}		
+	</delete>
+		
+	<select id="select_all" parameterType="Map"  resultType="rm">
+		SELECT 	erp_pid    ,
+				erp_name   ,
+				erp_api_key,
+				erp_status ,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime  ,
+				mod_dtime
+		 FROM 	erp_master
+	</select>
+	
+	<select id="select_by_pk" parameterType="int"  resultType="rm">
+		SELECT 	erp_pid    ,
+				erp_name   ,
+				erp_api_key,
+				erp_status ,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime  ,
+				mod_dtime
+		 FROM 	erp_master
+		 WHERE	erp_pid = #{erp_pid}
+	</select>
+	<!-- ## //.필수 생성 Query ######################################## -->
+
+	<select id="erp_api_list" parameterType="Map" resultType="Map">
+		SELECT 	erp_pid    ,
+				erp_name   ,
+				erp_api_key,
+				erp_status ,
+				reg_mem_pid,
+				mod_mem_pid,
+				reg_dtime  ,
+				mod_dtime
+		 FROM 	erp_master
+		 <where>
+			<if test="erp_pid != null">
+				erp_pid = #{erp_pid}
+			</if>
+			<if test="erp_name != null">
+				AND erp_name = #{erp_name}
+			</if>
+		</where>
+	</select>
+	
+	<select id="rentcar_corp_list" parameterType="Map" resultType="rm">
+		SELECT erp_pid,erp_client_cd 
+			FROM rentcar_corp 
+		WHERE erp_pid = #{erp_pid}
+		<if test="erp_client_cd != null">
+			AND erp_client_cd = #{erp_client_cd}
+		</if>
+	</select>
+	
+	<insert id="erp_api_log" parameterType="Map">
+		INSERT INTO erp_api_log
+		(
+			erp_pid,
+			api_cmd,
+			req_message,
+			res_message,
+			duration,
+			reg_dtime,
+			mod_dtime
+		)
+		VALUES
+		(
+			#{erp_pid},
+			#{api_cmd},
+			#{req_message},
+			#{res_message},
+			#{duration},
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+	</insert>
+	
+	<insert id="insertProviderCorp" parameterType="Map">
+		INSERT INTO provider_corp
+		(    
+			corp_code,          
+			corp_name,          
+			corp_public_name,    
+			ceo_name,            
+			corp_type,           
+			corp_address,        
+			corp_address_sub,    
+			corp_post_num,       
+			map_x,               
+			map_y,               
+			corp_tel_1,          
+			corp_tel_2,          
+			corp_fax,            
+			corp_staff_name,     
+			corp_staff_email,    
+			corp_staff_tel_1,    
+			corp_staff_tel_2,    
+			corp_status,         
+			reg_mem_pid,         
+			mod_mem_pid,         
+			reg_dtime,          
+			mod_dtime  
+		)
+		VALUES
+		(
+			#{corp_code},          
+			#{corp_name},          
+			#{corp_public_name},    
+			#{ceo_name},            
+			'RENTCAR',           
+			#{corp_address},        
+			#{corp_address_sub},    
+			#{corp_post_num},       
+			#{map_x},               
+			#{map_y},               
+			#{corp_tel_1},          
+			#{corp_tel_2},          
+			#{corp_fax},            
+			#{corp_staff_name},     
+			#{corp_staff_email},    
+			#{corp_staff_tel_1},    
+			#{corp_staff_tel_2},    
+			'01',         
+			#{reg_mem_pid},         
+			#{reg_mem_pid},         
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),          
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")  
+		)
+		<selectKey resultType="int" keyProperty="provider_pid" order="AFTER">
+	        SELECT LAST_INSERT_ID()
+		</selectKey>
+	</insert>
+	
+	<insert id="insertRentCarCorp" parameterType="Map">
+		INSERT INTO rentcar_corp
+		(
+			provider_pid,           
+			isbooking_nm,           
+			isbooking_ars,          
+			corp_ad_msg,            
+			shuttle_interval,       
+			corp_logo_url,          
+			booking_stime,          
+			booking_etime,          
+			booking_today,          
+			booking_today_hour,     
+			pickup_method,          
+			pickup_guide,           
+			shuttle_place_guide,    
+			shuttle_place_mapurl,   
+			shuttle_time_guide,     
+			corp_pub_guide,         
+			insu_pub_guide,         
+			insu_full_guide,        
+			corp_memo,              
+			isairport_service,      
+			isshuttle_service,      
+			isnight_service,        
+			contract_date,          
+			point_average,          
+			erp_pid,                
+			erp_client_cd,          
+			corp_status,            
+			reg_mem_pid,            
+			mod_mem_pid,            
+			reg_dtime,              
+			mod_dtime
+		)
+		VALUES
+		(
+			#{provider_pid},           
+			'Y',           
+			#{isbooking_ars},          
+			#{corp_ad_msg},            
+			#{shuttle_interval},       
+			#{corp_logo_url},          
+			#{booking_stime},          
+			#{booking_etime},          
+			#{booking_today},          
+			#{booking_today_hour},     
+			#{pickup_method},          
+			#{pickup_guide},           
+			#{shuttle_place_guide},    
+			#{shuttle_place_mapurl},   
+			#{shuttle_time_guide},     
+			#{corp_pub_guide},         
+			#{insu_pub_guide},         
+			#{insu_full_guide},        
+			#{corp_memo},              
+			#{isairport_service},      
+			#{isshuttle_service},      
+			#{isnight_service},        
+			#{contract_date},          
+			#{point_average},          
+			#{erp_pid},                
+			#{erp_client_cd},          
+			'10',            
+			#{reg_mem_pid},            
+			#{reg_mem_pid},            
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),              
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+		
+		<selectKey resultType="int" keyProperty="rentcar_corp_pid" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+	</insert>
+	
+	<select id="selectNmCarModel" parameterType="Map" resultType="rm">
+		SELECT 
+			nmmodel_pid,     
+			model_code,     
+			model_name,     
+			class_code,     
+			gear_code,      
+			maker_code,     
+			fuel_code,      
+			engine_cc,      
+			carrier_code,   
+			seater_count,   
+			sort_number,    
+			img_url_list,   
+			img_url_detail, 
+			min_price,      
+			model_tags,     
+			nmcar_status,   
+			vhcle_sn,       
+			reg_mem_pid,    
+			mod_mem_pid,    
+			reg_dtime
+		FROM nmcar_model
+		WHERE model_code=#{model_code}
+			AND nmcar_status !=9
+	</select>
+	
+	<select id="selectRentCarModel" parameterType="Map" resultType="rm">
+		SELECT 
+			rcmodel_pid,                    
+			rccorp_pid,                  
+			nmmodel_pid,                 
+			erp_pid,                     
+			erp_model_code,              
+			model_code,                  
+			model_name,                  
+			price_standard,              
+			price_dc_rate,               
+			price_sale,                  
+			price_insu_pub,              
+			price_insu_full,             
+			class_code,                  
+			car_count,                   
+			gear_code,                   
+			maker_code,                  
+			fuel_code,                   
+			engine_cc,                   
+			carrier_code,                
+			seater_count,                
+			img_url_list,                
+			img_url_detail,              
+			min_price,                   
+			model_tags,                  
+			isforeign_car,               
+			iselectric_car,              
+			license_code,                
+			license_age,                 
+			license_year,                
+			insu_pub_age,                
+			insu_pub_year,               
+			insu_pub_guide,              
+			insu_pub_limit_amount,       
+			insu_full_age,               
+			insu_full_year,              
+			insu_full_guide,             
+			insu_full_limit_amount,      
+			insu_selfcar,                
+			cancel_fee_payed_in_24,      
+			cancel_fee_payed_over_24,    
+			cancel_fee_rented_in_24,     
+			cancel_fee_rented_before_72, 
+			cancel_fee_rented_in_72,     
+			ischange_schedule,           
+			schedule_change_before_72,   
+			schedule_change_in_72,       
+			noshow,                      
+			point_average,               
+			sort_number,                 
+			model_status,                
+			reg_mem_pid,                 
+			mod_mem_pid,                 
+			reg_dtime,                   
+			mod_dtime
+		FROM rentcar_model_master
+		WHERE model_code=#{model_code}
+			AND erp_pid=#{erp_pid}
+			AND rccorp_pid = #{rccorp_pid}
+			AND model_status != 9
+	</select>
+	
+	<select id="selectRentCarModelJeju" parameterType="Map" resultType="rm">
+		SELECT 
+			rcmodel_pid,                    
+			rccorp_pid,                  
+			nmmodel_pid,                 
+			erp_pid,                     
+			erp_model_code,              
+			model_code,                  
+			model_name,                  
+			price_standard,              
+			price_dc_rate,               
+			price_sale,                  
+			price_insu_pub,              
+			price_insu_full,             
+			class_code,                  
+			car_count,                   
+			gear_code,                   
+			maker_code,                  
+			fuel_code,                   
+			engine_cc,                   
+			carrier_code,                
+			seater_count,                
+			img_url_list,                
+			img_url_detail,              
+			min_price,                   
+			model_tags,                  
+			isforeign_car,               
+			iselectric_car,              
+			license_code,                
+			license_age,                 
+			license_year,                
+			insu_pub_age,                
+			insu_pub_year,               
+			insu_pub_guide,              
+			insu_pub_limit_amount,       
+			insu_full_age,               
+			insu_full_year,              
+			insu_full_guide,             
+			insu_full_limit_amount,      
+			insu_selfcar,                
+			cancel_fee_payed_in_24,      
+			cancel_fee_payed_over_24,    
+			cancel_fee_rented_in_24,     
+			cancel_fee_rented_before_72, 
+			cancel_fee_rented_in_72,     
+			ischange_schedule,           
+			schedule_change_before_72,   
+			schedule_change_in_72,       
+			noshow,                      
+			point_average,               
+			sort_number,                 
+			model_status,                
+			reg_mem_pid,                 
+			mod_mem_pid,                 
+			reg_dtime,                   
+			mod_dtime
+		FROM rentcar_model_master
+		WHERE erp_model_code=#{erp_model_code}
+			AND erp_pid=#{erp_pid}
+			AND rccorp_pid = #{rccorp_pid}
+			AND model_status != 9
+	</select>
+	
+	<select id="selectRcCorpList" parameterType="Map" resultType="Map">
+		SELECT rccorp_pid FROM rentcar_corp WHERE provider_pid = #{provider_pid}
+	</select>
+	
+	<insert id="insertRentcarModel" parameterType="Map">
+		INSERT INTO rentcar_model_master
+		(                
+			rccorp_pid,                  
+			nmmodel_pid,                 
+			erp_pid,                     
+			erp_model_code,              
+			model_code,                  
+			model_name,                              
+			class_code,                 
+			car_count,                   
+			gear_code,
+			maker_code,                         
+			fuel_code,                   
+			engine_cc,                   
+			carrier_code,                
+			seater_count,                
+			img_url_list,
+			img_url_detail,  
+			min_price,                   
+			model_tags,  
+			isforeign_car,               
+			iselectric_car,                             
+			license_age,                                              
+			point_average,
+			sort_number,                 
+			model_status,                
+			reg_mem_pid,                 
+			mod_mem_pid,                 
+			reg_dtime,                   
+			mod_dtime
+		)
+		VALUES
+		(
+			#{rccorp_pid},                  
+			#{nmmodel_pid},                 
+			#{erp_pid},                     
+			#{erp_model_code},              
+			#{model_code},                  
+			#{model_name},                              
+			(SELECT class_code FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),           
+			#{car_count},                   
+			#{gear_code},   
+			(SELECT maker_code FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),                            
+			(SELECT fuel_code FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),                 
+			#{engine_cc},                   
+			(SELECT carrier_code FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),                
+			#{seater_count},                
+			(SELECT img_url_list FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),
+			(SELECT img_url_detail FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),  
+			#{min_price},                   
+			(SELECT model_tags FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),  
+			(SELECT IF(maker_code='MK_06', 'Y','N') FROM nmcar_model WHERE nmmodel_pid = #{nmmodel_pid}),               
+			#{iselectric_car},                             
+			#{license_age},                                              
+			0,
+			9999,                 
+			#{model_status},                
+			#{reg_mem_pid},            
+			#{reg_mem_pid},            
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),              
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+		
+		<selectKey resultType="int" keyProperty="rcmodel_pid" order="AFTER">
+	        SELECT LAST_INSERT_ID()
+		</selectKey>
+	
+	</insert>
+	
+	<insert id="insertRcModelOption" parameterType="Map">
+		INSERT INTO rentcar_model_option
+		(
+			rcmodel_pid,
+			code_div,
+			code_key
+		)
+		VALUES
+		(
+			#{rcmodel_pid},
+			#{code_div},
+			#{code_key}
+		)
+	</insert>
+	
+	<update id="updateRentcarModel" parameterType="Map">
+		UPDATE rentcar_model_master
+		SET price_insu_pub 					= 0							,
+			insu_pub_age 					= #{insu_pub_age}			,
+			insu_pub_year 					= #{insu_pub_year}			,
+			insu_pub_guide 					= #{insu_pub_guide}			,
+			insu_pub_limit_amount 			= #{insu_pub_limit_amount}	,
+			insu_pub_calculus 				= #{insu_pub_calculus}		,
+			insu_pub_name 					= #{insu_pub_name}			,
+			insu_pub_code                   = #{insu_pub_code}          ,
+			price_insu_full 				= 0							,
+			insu_full_age 					= #{insu_full_age}			,
+			insu_full_year 					= #{insu_full_year}			,
+			insu_full_guide 				= #{insu_full_guide}		,
+			insu_full_limit_amount 			= #{insu_full_limit_amount}	,
+			insu_full_calculus 				= #{insu_full_calculus}		,
+			insu_full_name 					= #{insu_full_name}			,
+			insu_full_code					= #{insu_full_code}
+		WHERE rcmodel_pid					= #{rcmodel_pid}
+	</update>
+	
+	<select id="selectErpSyncCode" parameterType="Map" resultType="Map">
+		SELECT
+			erp_pid,
+			sync_type,
+			erp_code,
+			erp_name,
+			nm_code
+		FROM erp_sync_code
+		WHERE erp_code = #{code}
+		AND rccorp_pid = #{rccorp_pid}
+		AND erp_pid = #{erp_pid}
+	</select>
+	
+	<select id="selectAllErpSyncCode" parameterType="Map" resultType="rm">
+		SELECT
+			(select erp_name from erp_master where erp_pid=#{erp_pid}) AS erp_pid,
+			sync_type,
+			erp_code,
+			erp_name,
+			nm_code
+		FROM erp_sync_code
+		WHERE erp_pid = #{erp_pid}
+		AND rccorp_pid = #{rccorp_pid}
+		AND nm_code is NULL
+	</select>
+	
+	<insert id="insertErpSyncCode" parameterType="Map">
+		INSERT INTO erp_sync_code
+		(
+			erp_pid,
+			rccorp_pid,
+			sync_type,
+			erp_code,
+			erp_name,
+			reg_mem_pid,
+			mod_mem_pid,
+			reg_dtime,
+			mod_dtime
+		)
+		VALUES
+		(
+			#{erp_pid},
+			#{rccorp_pid},
+			#{sync_type},
+			#{code},
+			#{name},
+			#{reg_mem_pid},            
+			#{reg_mem_pid},            
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s"),              
+			DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+		)
+	
+	</insert>
+	
+	<select id="selectNmcarModelList" resultType="rm">
+		SELECT
+			nmmodel_pid,
+			model_code,
+			model_name,
+			fuel_code
+		FROM nmcar_model
+		WHERE nmcar_status != 9
+	</select>
+	
+	<update id="updateErpSync" parameterType="Map">
+		UPDATE erp_sync_code
+			SET nm_code = #{nm_code}, nmmodel_pid = #{nmmodel_pid}
+		WHERE erp_code = #{erp_code}
+		AND rccorp_pid = #{rccorp_pid}
+	</update>
+	
+	<select id="selecterpSyncList" parameterType="Map" resultType="rm">
+		SELECT
+			erp_pid,
+			nmmodel_pid,
+			sync_type,
+			erp_code,
+			erp_name,
+			nm_code,
+			reg_mem_pid,
+			mod_mem_pid,
+			reg_dtime,
+			mod_dtime
+		FROM erp_sync_code
+		WHERE erp_pid = #{erp_pid}
+			AND erp_code = #{erp_code}
+			AND rccorp_pid = #{rccorp_pid}
+			AND nm_code is NOT NULL
+	</select>
+</mapper>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzimcar.admin.dao.PushDao">
+	<insert id="insert_base" parameterType="Map">
+        INSERT INTO push_history 
+                SET reg_mem_pid         = #{reg_mem_pid}
+                    , reg_dtime         = DATE_FORMAT(now(), "%Y%m%d%H%i%s")
+                    <if test="push_title != null and push_title !=''">
+                        , push_title    = #{push_title}
+                    </if>
+                    <if test="push_msg != null and push_msg !=''">
+                        , push_msg      = #{push_msg}
+                    </if>
+                    <if test="push_img_url != null and push_img_url !=''">
+                        , push_img_url  = #{push_img_url}
+                    </if>
+                    <if test="push_topic != null and push_topic !=''">
+                        , push_topic    = #{push_topic}
+                    </if>
+                    <if test="push_mem_pids != null and push_mem_pids !=''">
+                        , push_mem_pids = #{push_mem_pids}
+                    </if>
+                    <if test="push_error_msg != null and push_error_msg !=''">
+                        , push_error_msg = #{push_error_msg}
+                    </if>
+                    <if test="push_url != null and push_url !=''">
+                        , push_url = #{push_url}
+                    </if>
+                    <if test="push_android != null and push_android !=''">
+                        , push_android = #{push_android}
+                    </if>
+                    <if test="push_ios != null and push_ios !=''">
+                        , push_ios = #{push_ios}
+                    </if>
+                    , push_result       = #{push_result}
+        <!-- INSERT 후 PK 값을 얻기 위한 select Key -->
+        <selectKey resultType="int" keyProperty="push_pid" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey> 
+    </insert>
+    
+    <select id="searchMemberTokensAndroid" resultType="rm">
+        SELECT  IFNULL(push_id, "토큰값 없음") as push_id
+          FROM  member_master
+         WHERE  mem_pid in (${mem_pids})
+                AND device_type = "android"
+    </select>
+    
+    <select id="searchMemberTokensIOS" resultType="rm">
+        SELECT  IFNULL(push_id, "토큰값 없음") as push_id
+          FROM  member_master
+         WHERE  mem_pid in (${mem_pids})
+                AND device_type = "ios"
+    </select>
+    
+    <select id="select_by_pk" parameterType="int"  resultType="rm">
+        SELECT  push_title,
+                push_msg,
+                push_url,
+                push_img_url,
+                push_topic,
+                push_mem_pids,
+                push_android,
+                push_ios
+        FROM 
+                push_history
+        WHERE
+                push_pid = #{push_pid}
+    </select>
+    
+    <select id="searchMember" resultType="rm">
+        SELECT  mem_pid,
+                mem_id,
+                mem_name
+          FROM  member_master
+         WHERE  
+                <choose>
+                    <when test="searchWord != null and searchWord !=''">
+                        (
+                            UPPER(mem_name) LIKE UPPER(CONCAT('%',#{searchWord},'%'))
+                            OR  UPPER(mem_id) LIKE UPPER(CONCAT('%',#{searchWord},'%'))
+                        )
+                    </when>
+                    <otherwise>
+                        (1)
+                    </otherwise>
+                </choose>
+                <if test="nonselectMem !=null and nonselectMem != ''">
+                    AND mem_pid not in (${nonselectMem})
+                </if>
+                AND mem_status = 1;
+    </select>
+    
+    
+    
+    <select id="select_page" parameterType="Map"  resultType="rm">
+        SELECT  SQL_CALC_FOUND_ROWS
+                push_pid,
+                push_title,
+                push_msg,
+                push_url,
+                push_img_url,
+                push_topic,
+                push_mem_pids,
+                push_result,
+                push_error_msg,
+                reg_mem_pid,
+                (select member_master.mem_name from member_master where member_master.mem_pid = push_history.reg_mem_pid) as reg_mem_name,
+                reg_dtime
+        FROM 
+                push_history
+        WHERE
+                <choose>
+                    <when test="scValue != null and scValue !='' and scType != null and scType !=''">
+                        <choose>
+                            <when test="scType eq 'push_mem_names'">
+                                 push_mem_pids LIKE CONCAT('%',#{scValue},'%')
+                            </when>
+                            <otherwise>
+                                UPPER(${scType}) LIKE UPPER(CONCAT('%',#{scValue},'%'))
+                            </otherwise>
+                        </choose>
+                    </when>
+                    <otherwise>
+                        (1)
+                    </otherwise>
+                </choose>
+                <if test="resultSend != null and resultSend != ''">
+                    AND push_result = IF(#{resultSend} = 'true', 1, 0)
+                </if>
+                <if test="Sdtime != null and Sdtime != ''">
+                    AND date(reg_dtime) >= #{Sdtime}
+                </if>
+                <if test="Edtime != null and Edtime != ''">
+                    AND #{Edtime} >= date(reg_dtime) 
+                </if>
+        ORDER BY 
+                reg_dtime DESC 
+        <if test="offset != null and row_count != null">
+            LIMIT ${offset}, ${row_count}
+        </if>
+    </select>
+    
+    <select id="select_found_rows" resultType="int">
+        SELECT  FOUND_ROWS() AS total_count 
+    </select>
+    
+    <select id="select_push_ids" parameterType="Map"  resultType="rm">
+        SELECT 
+                GROUP_CONCAT(mem_name, "=", mem_id) as result
+        FROM 
+                member_master 
+        WHERE 
+                mem_pid IN (${ids});
+    </select>
+</mapper>
